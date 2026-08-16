@@ -1,0 +1,194 @@
+name: CI/CD Deploy Suite (Frontend, Backend & Android APK)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: "⚡ Desplegar TODO (Frontend, Backend y APK en 1 clic)"
+        required: true
+        type: boolean
+        default: true
+      deploy_frontend:
+        description: "🌐 Desplegar Frontend Web (S3 + CloudFront)"
+        required: false
+        type: boolean
+        default: true
+      deploy_backend:
+        description: "⚙️ Desplegar Backend (EC2 + Docker)"
+        required: false
+        type: boolean
+        default: true
+      build_apk:
+        description: "📱 Compilar y Generar APK Android"
+        required: false
+        type: boolean
+        default: true
+      apk_build_type:
+        description: "Tipo de APK Android"
+        required: true
+        type: choice
+        options:
+          - debug
+          - release
+        default: debug
+
+permissions:
+  contents: read
+
+jobs:
+  # =========================================================================
+  # 1. FRONTEND WEB (S3 + CloudFront)
+  # =========================================================================
+  deploy-frontend:
+    name: 🌐 Deploy Frontend (S3 + CloudFront)
+    if: ${{ github.event_name == 'push' || inputs.deploy_all == true || inputs.deploy_frontend == true }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 📦 Instalar dependencias
+        run: npm ci
+
+      - name: 🔨 Compilar Angular (Producción)
+        run: npm run build -- --configuration production
+
+      - name: 🔑 Configurar Credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: 🚀 Sincronizar archivos a S3
+        run: |
+          aws s3 sync dist/frontend/browser s3://${{ secrets.AWS_S3_BUCKET_NAME }} --delete
+
+      - name: 🔄 Invalidar caché de CloudFront
+        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+
+  # =========================================================================
+  # 2. BACKEND (EC2 + Docker)
+  # =========================================================================
+  deploy-backend:
+    name: ⚙️ Deploy Backend (EC2)
+    if: ${{ github.event_name == 'push' || inputs.deploy_all == true || inputs.deploy_backend == true }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 🚀 Desplegar en Instancia EC2 vía SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER || 'ec2-user' }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "🚀 Iniciando despliegue del Backend..."
+            
+            # Crear directorio base si no existe
+            sudo mkdir -p /app/backend
+            sudo chown -R $USER:$USER /app
+            cd /app
+
+            # Si existe repositorio git, actualizar; sino clonar
+            if [ -d ".git" ]; then
+              git fetch --all
+              git reset --hard origin/main
+            else
+              git clone ${{ github.server_url }}/${{ github.repository }}.git .
+            fi
+
+            cd /app/backend
+
+            # Generar archivo .env con variables de producción
+            cat << 'EOF' > .env
+            PORT=3000
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT || '5432' }}
+            DB_NAME=${{ secrets.DB_NAME || 'seguridad_chaclacayo' }}
+            DB_USER=${{ secrets.DB_USER || 'postgres' }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            NODE_ENV=production
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN || '*' }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            EOF
+
+            # Construir y reiniciar el contenedor Docker
+            echo "🐳 Construyendo imagen Docker..."
+            docker build -t seguridad-backend:latest .
+
+            # Detener y remover contenedor previo si existe
+            docker stop seguridad-backend-container || true
+            docker rm seguridad-backend-container || true
+
+            # Iniciar nuevo contenedor
+            docker run -d \
+              --name seguridad-backend-container \
+              --restart always \
+              -p 3000:3000 \
+              --env-file .env \
+              seguridad-backend:latest
+
+            echo "✅ Backend desplegado y ejecutándose exitosamente."
+
+  # =========================================================================
+  # 3. ANDROID APK BUILD (Independent artifact)
+  # =========================================================================
+  build-apk:
+    name: 📱 Generar APK Android
+    if: ${{ github.event_name == 'push' || inputs.deploy_all == true || inputs.build_apk == true }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./citizen-android
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: ☕ Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🐘 Configurar Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: 🔒 Dar permisos de ejecución a gradlew
+        run: chmod +x ./gradlew
+
+      - name: 🔨 Compilar APK Debug
+        if: ${{ github.event_name == 'push' || inputs.apk_build_type == 'debug' || inputs.apk_build_type == '' }}
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: 🔨 Compilar APK Release
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apk_build_type == 'release' }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: 📤 Subir APK como Artifact Descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ (inputs.apk_build_type == 'release' && 'citizen-security-release-apk') || 'citizen-security-debug-apk' }}
+          path: citizen-android/app/build/outputs/apk/*/*/*.apk
+          retention-days: 30

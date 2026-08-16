@@ -1,0 +1,683 @@
+<div class="space-y-6 animate-fade-in">
+  <!-- Citizens Header & Stats Banner -->
+  <section aria-label="Resumen de ciudadanos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <div class="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-dark shadow-lg flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-sm font-medium">Total de Vecinos</p>
+        @if (isCitizensLoading()) {
+          <div class="h-9 w-14 bg-slate-700/50 rounded-lg animate-pulse mt-1"></div>
+        } @else {
+          <h3 class="text-3xl font-bold mt-1 text-white">{{ citizens().length }}</h3>
+        }
+      </div>
+      <div class="h-12 w-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary-pastel" aria-hidden="true">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-dark shadow-lg flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-sm font-medium">Alertas Vecinales</p>
+        <h3 class="text-3xl font-bold mt-1 text-primary-pastel">
+          {{ totalAlertasCount() }}
+        </h3>
+        <p class="text-xs text-slate-400">Total acumulado en el distrito</p>
+      </div>
+      <div class="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary-pastel" aria-hidden="true">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-dark shadow-lg flex items-center justify-between sm:col-span-2 lg:col-span-1">
+      <div>
+        <p class="text-slate-400 text-sm font-medium">Plataforma Ciudadana</p>
+        <h3 class="text-lg font-bold mt-1 text-white">Chaclacayo Alerta</h3>
+        <p class="text-xs text-green-400 font-medium flex items-center gap-1 mt-0.5">
+          <span class="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
+          Servicio Activo
+        </p>
+      </div>
+      <div class="h-12 w-12 bg-green-500/10 rounded-xl flex items-center justify-center text-green-400" aria-hidden="true">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Citizens Table & Actions Card -->
+  <section aria-labelledby="citizens-section-heading" class="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden">
+    <!-- Control Bar -->
+    <div class="p-5 sm:p-6 border-b border-border-dark flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+      <div>
+        <h2 id="citizens-section-heading" class="text-lg font-bold text-white">Gestión de Vecinos y Usuarios</h2>
+        <p class="text-xs text-slate-400">Administración de cuentas ciudadanas y seguimiento de participación</p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <!-- Search Input -->
+        <div class="relative min-w-[240px]">
+          <input 
+            type="text" 
+            [ngModel]="citizenSearchTerm()"
+            (ngModelChange)="citizenSearchTerm.set($event)"
+            placeholder="Buscar vecino por nombre, DNI o contacto..."
+            aria-label="Buscar vecinos"
+            class="w-full pl-9 pr-3 py-2 bg-bg-dark border border-border-dark rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel"
+          />
+          <svg class="h-4 w-4 text-slate-500 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+
+        <!-- Refresh Button -->
+        <button 
+          (click)="loadCitizens()"
+          [disabled]="isCitizensLoading()"
+          aria-label="Actualizar lista de ciudadanos"
+          class="px-3 py-2 text-xs font-semibold rounded-xl text-slate-200 bg-bg-dark border border-border-dark hover:bg-bg-dark/50 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+        >
+          <svg class="h-4 w-4" [class.animate-spin]="isCitizensLoading()" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span>Refrescar</span>
+        </button>
+
+        <!-- Create Citizen Button -->
+        <button 
+          (click)="openCreateCitizenModal()"
+          class="min-h-[38px] px-4 py-2 text-xs font-semibold rounded-xl text-white bg-primary hover:bg-primary-pastel transition duration-200 shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+        >
+          <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+          </svg>
+          <span>Nuevo Vecino</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Citizens Content: Skeleton / Empty / Table & Cards -->
+    @if (isCitizensLoading()) {
+      <div class="p-6" role="status" aria-label="Cargando ciudadanos">
+        <div class="hidden md:block space-y-3">
+          <div class="h-10 bg-slate-800/40 rounded-lg animate-pulse"></div>
+          <div class="h-14 bg-slate-800/20 rounded-xl animate-pulse"></div>
+          <div class="h-14 bg-slate-800/20 rounded-xl animate-pulse"></div>
+          <div class="h-14 bg-slate-800/20 rounded-xl animate-pulse"></div>
+        </div>
+        <div class="md:hidden space-y-3">
+          <div class="h-28 bg-slate-800/30 rounded-xl animate-pulse"></div>
+          <div class="h-28 bg-slate-800/30 rounded-xl animate-pulse"></div>
+        </div>
+      </div>
+    } @else if (filteredCitizens().length === 0) {
+      <div class="p-12 text-center text-slate-400 space-y-3">
+        <svg class="h-12 w-12 text-slate-500 mx-auto" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        @if (citizenSearchTerm()) {
+          <p class="font-medium text-white text-base">No se encontraron vecinos con ese criterio</p>
+          <p class="text-xs">Prueba buscando con otro nombre, DNI o limpia el filtro de búsqueda.</p>
+        } @else {
+          <p class="font-medium text-white text-base">No hay vecinos registrados en la base de datos</p>
+          <p class="text-xs">Haz clic en "Nuevo Vecino" para registrar un ciudadano manualmente.</p>
+        }
+      </div>
+    } @else {
+      <!-- Mobile Responsive Card View (< md) -->
+      <div class="block md:hidden divide-y divide-border-dark/60 p-3 space-y-3">
+        @for (c of filteredCitizens(); track c.id) {
+          <article class="p-4 bg-bg-dark/40 rounded-xl border border-border-dark/60 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-semibold text-white text-sm">{{ c.nombre }}</h3>
+                <p class="text-xs text-slate-400 font-mono mt-0.5">DNI: {{ c.dni }}</p>
+              </div>
+              <span class="bg-secondary/15 text-secondary-pastel border border-secondary/25 px-2.5 py-0.5 rounded-full text-[10px] font-semibold">
+                {{ c.total_alertas ?? 0 }} reportes
+              </span>
+            </div>
+
+            <div class="text-xs text-slate-300 space-y-1">
+              <p><span class="text-slate-400 font-medium">Contacto:</span> {{ c.email_telefono || 'No especificado' }}</p>
+              <p><span class="text-slate-400 font-medium">Registrado:</span> {{ formatDate(c.created_at) || 'N/A' }}</p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-border-dark/40">
+              <button 
+                (click)="openCitizenHistoryModal(c)"
+                class="px-2.5 py-1.5 text-xs font-semibold rounded-lg text-primary-pastel bg-primary/10 border border-primary/20 hover:bg-primary/20 transition cursor-pointer flex items-center gap-1"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Historial</span>
+              </button>
+              <button 
+                (click)="openEditCitizenModal(c)"
+                class="px-2.5 py-1.5 text-xs font-semibold rounded-lg text-secondary-pastel bg-secondary/10 border border-secondary/20 hover:bg-secondary/20 transition cursor-pointer flex items-center gap-1"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                <span>Editar</span>
+              </button>
+              <button 
+                (click)="openDeleteCitizenModal(c)"
+                class="px-2.5 py-1.5 text-xs font-semibold rounded-lg text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition cursor-pointer flex items-center gap-1"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                <span>Eliminar</span>
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+
+      <!-- Desktop Table View (>= md screens) -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-bg-dark/60 border-b border-border-dark text-slate-300 text-xs font-semibold uppercase tracking-wider">
+              <th scope="col" class="px-6 py-4">Vecino / DNI</th>
+              <th scope="col" class="px-6 py-4">Contacto (Email / Teléfono)</th>
+              <th scope="col" class="px-6 py-4">Alertas Registradas</th>
+              <th scope="col" class="px-6 py-4">Fecha de Registro</th>
+              <th scope="col" class="px-6 py-4 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border-dark/60 text-sm">
+            @for (c of filteredCitizens(); track c.id) {
+              <tr class="hover:bg-slate-800/30 transition duration-150">
+                <td class="px-6 py-4">
+                  <div class="font-semibold text-white">{{ c.nombre }}</div>
+                  <div class="text-xs text-slate-400 font-mono">DNI: {{ c.dni }}</div>
+                </td>
+                <td class="px-6 py-4 text-slate-300">
+                  {{ c.email_telefono || '—' }}
+                </td>
+                <td class="px-6 py-4">
+                  <span class="bg-secondary/15 text-secondary-pastel border border-secondary/25 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                    {{ c.total_alertas ?? 0 }} reportes
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-slate-400 text-xs">
+                  {{ formatDate(c.created_at) || '—' }}
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center justify-center gap-2">
+                    <button 
+                      (click)="openCitizenHistoryModal(c)"
+                      title="Ver historial de alertas reportadas"
+                      class="px-2.5 py-1.5 text-xs font-semibold rounded-lg text-primary-pastel bg-primary/10 border border-primary/20 hover:bg-primary/20 transition cursor-pointer flex items-center gap-1"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                      <span>Historial</span>
+                    </button>
+                    <button 
+                      (click)="openEditCitizenModal(c)"
+                      title="Editar datos del ciudadano"
+                      class="px-2.5 py-1.5 text-xs font-semibold rounded-lg text-secondary-pastel bg-secondary/10 border border-secondary/20 hover:bg-secondary/20 transition cursor-pointer flex items-center gap-1"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                      <span>Editar</span>
+                    </button>
+                    <button 
+                      (click)="openDeleteCitizenModal(c)"
+                      title="Eliminar registro ciudadano"
+                      class="px-2.5 py-1.5 text-xs font-semibold rounded-lg text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition cursor-pointer flex items-center gap-1"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                      <span>Eliminar</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- MODAL: CREAR NUEVO VECINO -->
+@if (showCreateCitizenModal()) {
+  <div 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="create-citizen-title"
+    class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-md p-6 bg-card-dark border border-border-dark rounded-2xl shadow-2xl space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 id="create-citizen-title" class="text-lg font-bold text-white">Registrar Nuevo Vecino</h2>
+          <p class="text-xs text-slate-400">Crear una cuenta ciudadana en el sistema</p>
+        </div>
+        <button 
+          (click)="closeCreateCitizenModal()"
+          aria-label="Cerrar modal de creación"
+          class="text-slate-400 hover:text-white transition p-1 cursor-pointer"
+        >
+          <svg class="h-6 w-6" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      @if (createCitizenError()) {
+        <div role="alert" class="bg-red-500/10 border border-red-500/25 text-red-200 text-xs p-3 rounded-xl flex items-center gap-2">
+          <svg class="h-4 w-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>{{ createCitizenError() }}</span>
+        </div>
+      }
+
+      <form (submit)="onCreateCitizen($event)" class="space-y-4">
+        <div>
+          <label for="create-cz-name" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Nombre Completo</label>
+          <input 
+            id="create-cz-name"
+            type="text" 
+            autocomplete="name"
+            required 
+            [(ngModel)]="newCitizenName" 
+            name="newCzName"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="Ej. Carlos Mendoza"
+          />
+        </div>
+
+        <div>
+          <label for="create-cz-dni" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">DNI (8 dígitos)</label>
+          <input 
+            id="create-cz-dni"
+            type="text" 
+            inputmode="numeric"
+            pattern="[0-9]{8}"
+            maxlength="8"
+            autocomplete="username"
+            required 
+            [(ngModel)]="newCitizenDni" 
+            name="newCzDni"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm font-mono"
+            placeholder="72849102"
+          />
+        </div>
+
+        <div>
+          <label for="create-cz-email" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Email o Teléfono (Opcional)</label>
+          <input 
+            id="create-cz-email"
+            type="text" 
+            autocomplete="email"
+            [(ngModel)]="newCitizenEmail" 
+            name="newCzEmail"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="987654321 o vecino@gmail.com"
+          />
+        </div>
+
+        <div>
+          <label for="create-cz-password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Contraseña Inicial</label>
+          <input 
+            id="create-cz-password"
+            type="password" 
+            autocomplete="new-password"
+            minlength="6"
+            required 
+            [(ngModel)]="newCitizenPassword" 
+            name="newCzPassword"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="Mínimo 6 caracteres"
+          />
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button 
+            type="button"
+            (click)="closeCreateCitizenModal()"
+            class="min-h-[40px] px-4 py-2 bg-bg-dark border border-border-dark text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit"
+            [disabled]="isCreatingCitizen()"
+            class="min-h-[40px] px-5 py-2 bg-primary hover:bg-primary-pastel text-white rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            @if (isCreatingCitizen()) {
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Registrando...</span>
+            } @else {
+              <span>Registrar Vecino</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- MODAL: EDITAR VECINO -->
+@if (showEditCitizenModal()) {
+  <div 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="edit-citizen-title"
+    class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-md p-6 bg-card-dark border border-border-dark rounded-2xl shadow-2xl space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 id="edit-citizen-title" class="text-lg font-bold text-white">Editar Datos del Vecino</h2>
+          <p class="text-xs text-slate-400">Actualizar información de la cuenta ciudadana</p>
+        </div>
+        <button 
+          (click)="closeEditCitizenModal()"
+          aria-label="Cerrar modal de edición"
+          class="text-slate-400 hover:text-white transition p-1 cursor-pointer"
+        >
+          <svg class="h-6 w-6" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      @if (editCitizenError()) {
+        <div role="alert" class="bg-red-500/10 border border-red-500/25 text-red-200 text-xs p-3 rounded-xl flex items-center gap-2">
+          <svg class="h-4 w-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>{{ editCitizenError() }}</span>
+        </div>
+      }
+
+      <form (submit)="onUpdateCitizen($event)" class="space-y-4">
+        <div>
+          <label for="edit-cz-name" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Nombre Completo</label>
+          <input 
+            id="edit-cz-name"
+            type="text" 
+            autocomplete="name"
+            required 
+            [(ngModel)]="editCitizenName" 
+            name="editCzName"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+          />
+        </div>
+
+        <div>
+          <label for="edit-cz-dni" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">DNI (8 dígitos)</label>
+          <input 
+            id="edit-cz-dni"
+            type="text" 
+            inputmode="numeric"
+            pattern="[0-9]{8}"
+            maxlength="8"
+            autocomplete="username"
+            required 
+            [(ngModel)]="editCitizenDni" 
+            name="editCzDni"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm font-mono"
+          />
+        </div>
+
+        <div>
+          <label for="edit-cz-email" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Email o Teléfono</label>
+          <input 
+            id="edit-cz-email"
+            type="text" 
+            autocomplete="email"
+            [(ngModel)]="editCitizenEmail" 
+            name="editCzEmail"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="987654321 o vecino@gmail.com"
+          />
+        </div>
+
+        <div>
+          <label for="edit-cz-password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            Nueva Contraseña <span class="text-slate-500 font-normal lowercase">(dejar en blanco para no modificar)</span>
+          </label>
+          <input 
+            id="edit-cz-password"
+            type="password" 
+            autocomplete="new-password"
+            minlength="6"
+            [(ngModel)]="editCitizenPassword" 
+            name="editCzPassword"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button 
+            type="button"
+            (click)="closeEditCitizenModal()"
+            class="min-h-[40px] px-4 py-2 bg-bg-dark border border-border-dark text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit"
+            [disabled]="isUpdatingCitizen()"
+            class="min-h-[40px] px-5 py-2 bg-primary hover:bg-primary-pastel text-white rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            @if (isUpdatingCitizen()) {
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Guardando...</span>
+            } @else {
+              <span>Guardar Cambios</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- MODAL: CONFIRMAR ELIMINACIÓN DE VECINO -->
+@if (showDeleteCitizenModal()) {
+  <div 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="delete-citizen-title"
+    class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-md p-6 bg-card-dark border border-border-dark rounded-2xl shadow-2xl space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="h-12 w-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center shrink-0">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 id="delete-citizen-title" class="text-base font-bold text-white">¿Eliminar Registro Ciudadano?</h2>
+          <p class="text-xs text-slate-400">Esta acción dará de baja la cuenta del vecino.</p>
+        </div>
+      </div>
+
+      @if (deleteCitizenError()) {
+        <div role="alert" class="bg-red-500/10 border border-red-500/25 text-red-200 text-xs p-3 rounded-xl flex items-center gap-2">
+          <svg class="h-4 w-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>{{ deleteCitizenError() }}</span>
+        </div>
+      }
+
+      <div class="bg-bg-dark/60 p-4 rounded-xl border border-border-dark space-y-1.5 text-xs text-slate-300">
+        <p><span class="text-slate-400 font-semibold">Vecino:</span> {{ citizenToDelete()?.nombre }}</p>
+        <p><span class="text-slate-400 font-semibold">DNI:</span> <span class="font-mono">{{ citizenToDelete()?.dni }}</span></p>
+        <p><span class="text-slate-400 font-semibold">Contacto:</span> {{ citizenToDelete()?.email_telefono || 'No registrado' }}</p>
+        <p><span class="text-slate-400 font-semibold">Reportes emitidos:</span> {{ citizenToDelete()?.total_alertas ?? 0 }} alertas</p>
+        <p class="text-slate-500 text-[11px] pt-1 border-t border-border-dark/60">
+          * Las alertas históricas emitidas por este vecino no se perderán del mapa ni del registro general.
+        </p>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button 
+          type="button"
+          (click)="closeDeleteCitizenModal()"
+          class="min-h-[40px] px-4 py-2 bg-bg-dark border border-border-dark text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="button"
+          (click)="onConfirmDeleteCitizen()"
+          [disabled]="isDeletingCitizen()"
+          class="min-h-[40px] px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+        >
+          @if (isDeletingCitizen()) {
+            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Eliminando...</span>
+          } @else {
+            <span>Sí, Eliminar Vecino</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL: HISTORIAL DE ALERTAS DEL VECINO -->
+@if (showCitizenHistoryModal()) {
+  <div 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="citizen-history-title"
+    class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-2xl max-h-[85vh] p-6 bg-card-dark border border-border-dark rounded-2xl shadow-2xl flex flex-col space-y-4 overflow-hidden">
+      <div class="flex justify-between items-center border-b border-border-dark pb-3">
+        <div>
+          <h2 id="citizen-history-title" class="text-base font-bold text-white">
+            Historial Vecinal: {{ selectedCitizenDetail()?.nombre }}
+          </h2>
+          <p class="text-xs text-slate-400">
+            DNI: <span class="font-mono text-slate-300">{{ selectedCitizenDetail()?.dni }}</span> 
+            @if (selectedCitizenDetail()?.email_telefono) {
+              • Contacto: <span class="text-slate-300">{{ selectedCitizenDetail()?.email_telefono }}</span>
+            }
+          </p>
+        </div>
+        <button 
+          (click)="closeCitizenHistoryModal()"
+          aria-label="Cerrar historial"
+          class="text-slate-400 hover:text-white transition p-1 cursor-pointer"
+        >
+          <svg class="h-6 w-6" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- History Content -->
+      <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+        @if (isCitizenDetailLoading()) {
+          <div class="p-6 space-y-3" role="status" aria-label="Cargando historial de alertas">
+            <div class="h-16 bg-slate-800/30 rounded-xl animate-pulse"></div>
+            <div class="h-16 bg-slate-800/30 rounded-xl animate-pulse"></div>
+            <div class="h-16 bg-slate-800/30 rounded-xl animate-pulse"></div>
+          </div>
+        } @else if (!selectedCitizenDetail()?.alertas || selectedCitizenDetail()?.alertas?.length === 0) {
+          <div class="p-8 text-center text-slate-400 space-y-2">
+            <svg class="h-10 w-10 text-slate-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <p class="text-sm font-semibold text-slate-300">Sin reportes registrados</p>
+            <p class="text-xs">Este vecino aún no ha emitido ninguna alerta de seguridad o emergencia.</p>
+          </div>
+        } @else {
+          <div class="space-y-3">
+            @for (a of selectedCitizenDetail()?.alertas; track a.id) {
+              <div class="p-4 bg-bg-dark/60 rounded-xl border border-border-dark space-y-2">
+                <div class="flex justify-between items-start">
+                  <div class="flex items-center gap-2">
+                    <span 
+                      [class]="a.tipo_incidencia === 'Emergencia' 
+                        ? 'bg-red-500/20 text-red-300 border-red-500/30' 
+                        : a.tipo_incidencia === 'Asalto'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                        : 'bg-primary/20 text-primary-pastel border-primary/30'"
+                      class="px-2.5 py-0.5 rounded-full text-xs font-bold border"
+                    >
+                      {{ a.tipo_incidencia }}
+                    </span>
+                    <span class="text-xs text-slate-400">#{{ a.id }}</span>
+                  </div>
+
+                  <span 
+                    [class]="a.estado === 'Atendido' 
+                      ? 'bg-green-500/15 text-green-300 border-green-500/30' 
+                      : a.estado === 'En camino' 
+                      ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' 
+                      : a.estado === 'Falsa Alarma' || a.estado === 'Cancelado'
+                      ? 'bg-slate-700/40 text-slate-400 border-slate-600/40' 
+                      : 'bg-red-500/15 text-red-300 border-red-500/30'"
+                    class="px-2 py-0.5 rounded-full text-[11px] font-semibold border"
+                  >
+                    {{ a.estado || 'Aun no atendido' }}
+                  </span>
+                </div>
+
+                <p class="text-xs text-slate-200">{{ a.descripcion || 'Sin descripción detallada' }}</p>
+
+                <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-border-dark/40">
+                  <span>Ocurrido: {{ formatDate(a.fecha_suceso) }}</span>
+                  @if (a.evidencia_url) {
+                    <a 
+                      [href]="mediaUrl + a.evidencia_url" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="text-primary-pastel hover:underline inline-flex items-center gap-1 font-semibold"
+                    >
+                      Ver evidencia ↗
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-border-dark">
+        <button 
+          type="button"
+          (click)="closeCitizenHistoryModal()"
+          class="min-h-[40px] px-5 py-2 bg-bg-dark border border-border-dark text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,116 @@
+<main class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-bg-dark relative overflow-hidden">
+  <!-- Background Decorative Blobs -->
+  <div class="absolute -top-40 -right-40 w-80 h-80 bg-primary opacity-10 rounded-full blur-3xl" aria-hidden="true"></div>
+  <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary opacity-10 rounded-full blur-3xl" aria-hidden="true"></div>
+
+  <div class="max-w-md w-full space-y-8 p-8 bg-card-dark border border-border-dark/50 rounded-2xl shadow-xl backdrop-blur-sm">
+    <header class="text-center">
+      <div class="mx-auto h-16 w-16 bg-gradient-to-tr from-primary to-secondary-pastel rounded-2xl flex items-center justify-center shadow-lg" aria-hidden="true">
+        <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+        </svg>
+      </div>
+      <h1 class="mt-6 text-3xl font-extrabold text-white tracking-tight">Registro de Ciudadano</h1>
+      <p class="mt-2 text-sm text-gray-400">
+        Cree una cuenta para poder emitir alertas e incidencias
+      </p>
+    </header>
+
+    @if (errorMessage()) {
+      <div role="alert" class="bg-red-500/10 border border-red-500/20 text-red-200 text-sm p-4 rounded-lg flex items-center space-x-2">
+        <svg class="h-5 w-5 text-red-400 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <form class="mt-8 space-y-4" (submit)="onSubmit($event)">
+      <div>
+        <label for="reg-nombre" class="block text-sm font-medium text-gray-300">Nombre Completo</label>
+        <input
+          id="reg-nombre"
+          name="nombre"
+          type="text"
+          autocomplete="name"
+          required
+          [(ngModel)]="nombre"
+          class="mt-1 block w-full px-4 py-2.5 bg-bg-dark border border-border-dark/80 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-pastel focus:border-transparent transition"
+          placeholder="Juan Pérez"
+        />
+      </div>
+
+      <div>
+        <label for="reg-dni" class="block text-sm font-medium text-gray-300">DNI (8 dígitos)</label>
+        <input
+          id="reg-dni"
+          name="dni"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]{8}"
+          maxlength="8"
+          autocomplete="username"
+          required
+          [(ngModel)]="dni"
+          class="mt-1 block w-full px-4 py-2.5 bg-bg-dark border border-border-dark/80 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-pastel focus:border-transparent transition"
+          placeholder="Ingrese su DNI (ej. 12345678)"
+        />
+      </div>
+
+      <div>
+        <label for="reg-email_telefono" class="block text-sm font-medium text-gray-300">Email o Teléfono (Opcional)</label>
+        <input
+          id="reg-email_telefono"
+          name="email_telefono"
+          type="text"
+          autocomplete="email"
+          [(ngModel)]="email_telefono"
+          class="mt-1 block w-full px-4 py-2.5 bg-bg-dark border border-border-dark/80 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-pastel focus:border-transparent transition"
+          placeholder="juan@correo.com o 987654321"
+        />
+      </div>
+
+      <div>
+        <label for="reg-password" class="block text-sm font-medium text-gray-300">Contraseña (mínimo 6 caracteres)</label>
+        <input
+          id="reg-password"
+          name="password"
+          type="password"
+          minlength="6"
+          autocomplete="new-password"
+          required
+          [(ngModel)]="password"
+          class="mt-1 block w-full px-4 py-2.5 bg-bg-dark border border-border-dark/80 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-pastel focus:border-transparent transition"
+          placeholder="Mínimo 6 caracteres"
+        />
+      </div>
+
+      <div class="pt-2">
+        <button
+          type="submit"
+          [disabled]="isLoading()"
+          class="group relative w-full min-h-[48px] flex items-center justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-primary to-secondary-pastel hover:from-primary-pastel hover:to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+        >
+          @if (isLoading()) {
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" aria-hidden="true" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Registrando cuenta...
+          } @else {
+            Registrarse
+          }
+        </button>
+      </div>
+    </form>
+
+    <footer class="text-center mt-4">
+      <p class="text-sm text-gray-400">
+        ¿Ya tienes una cuenta?
+        <a routerLink="/auth/login" class="font-medium text-primary-pastel hover:text-primary transition py-1 inline-block">
+          Inicia sesión
+        </a>
+      </p>
+    </footer>
+  </div>
+</main>

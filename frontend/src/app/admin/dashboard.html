@@ -1,0 +1,103 @@
+<div class="min-h-screen bg-bg-dark text-slate-100 flex flex-col font-sans">
+  <!-- Navbar / Header -->
+  <header class="bg-card-dark/90 backdrop-blur-md border-b border-border-dark sticky top-0 z-40 px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+      <div class="flex items-center space-x-3">
+        <div class="h-10 w-10 bg-gradient-to-tr from-primary to-primary-pastel rounded-xl flex items-center justify-center shadow-md border border-primary/20" aria-hidden="true">
+          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-primary-pastel to-secondary-pastel bg-clip-text text-transparent">Centro de Control</h1>
+          <p class="text-xs text-slate-400">Seguridad Ciudadana Chaclacayo</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+      <div class="text-right hidden md:block">
+        <p class="text-sm font-semibold">{{ authService.currentUser()?.nombre }}</p>
+        <p class="text-xs text-primary-pastel uppercase tracking-wider font-medium">Operador</p>
+      </div>
+
+      <button 
+        (click)="authService.logout()"
+        class="min-h-[40px] px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition duration-200 cursor-pointer"
+      >
+        Cerrar Sesión
+      </button>
+    </div>
+  </header>
+
+  <!-- Section Tabs Navigation (Subroutes) -->
+  <nav role="tablist" aria-label="Secciones del panel de control" class="flex border-b border-border-dark bg-card-dark/30 z-10 w-full justify-start text-xs font-bold uppercase tracking-wider px-4 sm:px-6 overflow-x-auto">
+    <a 
+      role="tab"
+      routerLink="/admin/monitor"
+      routerLinkActive="border-b-2 border-primary-pastel text-primary-pastel"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="text-slate-400 hover:text-slate-200 py-4 px-4 sm:px-6 transition duration-200 focus:outline-none cursor-pointer flex items-center gap-2 shrink-0"
+    >
+      <span>📋</span> Monitoreo en Vivo
+    </a>
+    <a 
+      role="tab"
+      routerLink="/admin/heatmap"
+      routerLinkActive="border-b-2 border-primary-pastel text-primary-pastel"
+      class="text-slate-400 hover:text-slate-200 py-4 px-4 sm:px-6 transition duration-200 focus:outline-none cursor-pointer flex items-center gap-2 shrink-0"
+    >
+      <span>🔥</span> Mapa de Calor
+    </a>
+    <a 
+      role="tab"
+      routerLink="/admin/operators"
+      routerLinkActive="border-b-2 border-primary-pastel text-primary-pastel"
+      class="text-slate-400 hover:text-slate-200 py-4 px-4 sm:px-6 transition duration-200 focus:outline-none cursor-pointer flex items-center gap-2 shrink-0"
+    >
+      <span>👥</span> Gestión de Operadores
+    </a>
+    <a 
+      role="tab"
+      routerLink="/admin/citizens"
+      routerLinkActive="border-b-2 border-primary-pastel text-primary-pastel"
+      class="text-slate-400 hover:text-slate-200 py-4 px-4 sm:px-6 transition duration-200 focus:outline-none cursor-pointer flex items-center gap-2 shrink-0"
+    >
+      <span>🏡</span> Gestión de Vecinos
+    </a>
+  </nav>
+
+  <!-- Main Dashboard Child Outlet -->
+  <main class="flex-grow p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Global Toast Notification -->
+  @if (toastService.message()) {
+    <aside 
+      aria-live="polite" 
+      aria-atomic="true"
+      class="fixed bottom-6 right-6 z-50 animate-bounce transition duration-300"
+    >
+      <div 
+        [class]="
+          toastService.type() === 'success' 
+            ? 'bg-card-dark border-green-500/40 text-green-300 shadow-green-950/40' 
+            : 'bg-card-dark border-red-500/40 text-red-300 shadow-red-950/40'
+        "
+        class="border shadow-2xl px-5 py-3.5 rounded-2xl flex items-center gap-3 max-w-md text-xs font-semibold backdrop-blur-md"
+      >
+        @if (toastService.type() === 'success') {
+          <svg class="h-5 w-5 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        } @else {
+          <svg class="h-5 w-5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        }
+        <span>{{ toastService.message() }}</span>
+      </div>
+    </aside>
+  }
+</div>

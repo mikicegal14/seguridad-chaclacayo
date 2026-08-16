@@ -1,0 +1,16 @@
+# Región de AWS
+aws_region   = "us-east-1"
+project_name = "seguridad-chaclacayo"
+environment  = "dev"
+
+# Backend EC2 (Free Tier)
+ec2_instance_type = "t3.micro"
+backend_port      = 3000
+allowed_ssh_cidr  = "0.0.0.0/0"
+# ssh_key_name    = "mi-llave-ssh" # Opcional: crea un Key Pair en AWS si prefieres SSH clásico
+
+# Base de datos RDS PostgreSQL (Free Tier)
+db_instance_class = "db.t3.micro"
+db_name           = "seguridad_chaclacayo"
+db_username       = "postgres"
+db_password       = "TuPasswordSeguro2026!"

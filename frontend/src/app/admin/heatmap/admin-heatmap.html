@@ -1,0 +1,95 @@
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 animate-fade-in">
+  <!-- Map Panel (Left - 3 columns width) -->
+  <div class="lg:col-span-3 flex flex-col space-y-4">
+    <div class="bg-card-dark rounded-2xl border border-border-dark p-4 shadow-xl">
+      <div class="relative overflow-hidden rounded-xl border border-border-dark bg-slate-100 w-full h-[600px]">
+        <!-- Leaflet Map element with Light Voyager tiles -->
+        <div id="heatmap" class="w-full h-full relative z-10"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Panel (Right - 1 column width) -->
+  <aside aria-label="Controles del mapa de calor" class="space-y-6">
+    <!-- Incident Filter Card -->
+    <div class="bg-card-dark p-5 rounded-2xl border border-border-dark shadow-lg space-y-4">
+      <div>
+        <label for="heatmap-filter" class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Filtro Temático</label>
+        <p class="text-[10px] text-slate-400 mt-0.5">Analizar densidad por tipo de incidencia</p>
+      </div>
+      
+      <select 
+        id="heatmap-filter"
+        [value]="selectedTypeFilter()"
+        (change)="onFilterChange($any($event.target).value)"
+        class="w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-primary-pastel text-xs font-semibold cursor-pointer border font-sans"
+      >
+        <option value="Todos">Todos los reportes</option>
+        <option value="Asalto">Asaltos / Robos</option>
+        <option value="Emergencia">Botón de Pánico</option>
+        <option value="Accidente">Accidentes viales</option>
+        <option value="Vandalismo">Vandalismo</option>
+        <option value="Reporte">Reporte General</option>
+      </select>
+
+      <!-- Map Legend -->
+      <div class="pt-3 border-t border-border-dark/60 space-y-2.5 text-[11px]">
+        <span class="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Gravedad / Intensidad</span>
+        <div class="flex items-center space-x-2">
+          <span class="h-3 w-3 rounded-full border border-red-700 bg-red-800" aria-hidden="true"></span>
+          <span class="text-slate-300">Crítico / Densidad Alta (>10)</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="h-3 w-3 rounded-full border border-red-500 bg-red-600" aria-hidden="true"></span>
+          <span class="text-slate-300">Moderado (>5)</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="h-3 w-3 rounded-full border border-pink-500 bg-pink-500" aria-hidden="true"></span>
+          <span class="text-slate-300">Medio (>2)</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="h-3 w-3 rounded-full border border-primary-pastel bg-primary-pastel" aria-hidden="true"></span>
+          <span class="text-slate-300">Leve (1-2)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hotspots Sectors Ranking Card -->
+    <div class="bg-card-dark p-5 rounded-2xl border border-border-dark shadow-lg space-y-4">
+      <div>
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Zonas Críticas</h3>
+        <p class="text-[10px] text-slate-400 mt-0.5">Ranking por número de incidencias acumuladas</p>
+      </div>
+
+      <div class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+        @if (hotspots().length === 0) {
+          <div class="text-center py-6 text-slate-400 text-xs italic">
+            No hay zonas registradas para el filtro seleccionado.
+          </div>
+        } @else {
+          @for (spot of hotspots(); track spot.name) {
+            <div class="flex justify-between items-center p-3 bg-bg-dark/40 border border-border-dark/40 rounded-xl hover:border-border-dark transition">
+              <div class="text-[11px]">
+                <span class="font-bold text-white block">{{ spot.name }}</span>
+                <span class="text-[9px] text-slate-400">Ubicación de Incidencia</span>
+              </div>
+
+              <div class="text-right">
+                <span 
+                  [class]="
+                    spot.count > 10 ? 'bg-red-500/15 text-red-400 border border-red-500/25 px-2 py-0.5 rounded text-[9px] font-bold' :
+                    spot.count > 5 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25 px-2 py-0.5 rounded text-[9px] font-bold' :
+                    spot.count > 0 ? 'bg-primary/15 text-primary-pastel border border-primary/25 px-2 py-0.5 rounded text-[9px] font-bold' :
+                    'bg-slate-500/10 text-slate-400 border border-slate-500/20 px-2 py-0.5 rounded text-[9px] font-bold'
+                  "
+                >
+                  {{ spot.count }} rep.
+                </span>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </aside>
+</div>

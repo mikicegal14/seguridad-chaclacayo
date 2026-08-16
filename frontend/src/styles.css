@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme {
+  --color-primary: #8b5cf6;       /* Violet / Purple core */
+  --color-primary-pastel: #c084fc; /* Pastel purple accent */
+  --color-secondary: #ec4899;     /* Pink core */
+  --color-secondary-pastel: #f472b6; /* Pastel pink accent */
+  
+  --color-bg-dark: #121824;        /* Deep elegant dark background */
+  --color-card-dark: #1e293b;      /* Slate-800 for cards */
+  --color-border-dark: #334155;    /* Slate-700 for borders */
+}
+
+/* Custom global styles for smooth transitions and typography */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-bg-dark);
+  color: #f1f5f9; /* Slate-100 text */
+  scroll-behavior: smooth;
+}

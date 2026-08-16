@@ -1,0 +1,437 @@
+<div class="space-y-6">
+  <!-- Stats Widgets -->
+  <section aria-label="Métricas generales" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+    <div class="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-dark shadow-lg flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-sm font-medium">Total de Alertas</p>
+        @if (isLoading()) {
+          <div class="h-9 w-14 bg-slate-700/50 rounded-lg animate-pulse mt-1"></div>
+        } @else {
+          <h3 class="text-3xl font-bold mt-1 text-white">{{ alerts().length }}</h3>
+        }
+      </div>
+      <div class="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary-pastel" aria-hidden="true">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+      </div>
+    </div>
+    
+    <div class="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-dark shadow-lg flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-sm font-medium">Emergencias Activas</p>
+        @if (isLoading()) {
+          <div class="h-9 w-14 bg-red-900/30 rounded-lg animate-pulse mt-1"></div>
+        } @else {
+          <h3 class="text-3xl font-bold mt-1 text-red-400">{{ emergenciesCount() }}</h3>
+        }
+      </div>
+      <div class="h-12 w-12 bg-red-500/10 rounded-xl flex items-center justify-center text-red-400" aria-hidden="true">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-dark shadow-lg flex items-center justify-between sm:col-span-2 md:col-span-1">
+      <div>
+        <p class="text-slate-400 text-sm font-medium">Incidencias Generales</p>
+        @if (isLoading()) {
+          <div class="h-9 w-14 bg-purple-900/30 rounded-lg animate-pulse mt-1"></div>
+        } @else {
+          <h3 class="text-3xl font-bold mt-1 text-secondary-pastel">{{ nonEmergenciesCount() }}</h3>
+        }
+      </div>
+      <div class="h-12 w-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary-pastel" aria-hidden="true">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Alertas Table Section -->
+  <section aria-labelledby="alerts-table-heading" class="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden">
+    <div class="p-5 sm:p-6 border-b border-border-dark flex justify-between items-center flex-wrap gap-4">
+      <div>
+        <h2 id="alerts-table-heading" class="text-lg font-bold text-white">Monitoreo de Alertas Recientes</h2>
+        <p class="text-xs text-slate-400">Listado actualizado cronológicamente en tiempo real</p>
+      </div>
+      
+      <button 
+        (click)="loadAlerts()"
+        [disabled]="isRefreshing()"
+        aria-label="Refrescar lista de alertas"
+        class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-200 bg-bg-dark border border-border-dark hover:bg-bg-dark/50 hover:text-white transition duration-200 flex items-center space-x-2 cursor-pointer disabled:opacity-50"
+      >
+        <svg class="h-4 w-4" [class.animate-spin]="isRefreshing()" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span>Refrescar</span>
+      </button>
+    </div>
+
+    <!-- Content: Skeleton / Empty / Table & Responsive Cards -->
+    @if (isLoading()) {
+      <!-- Skeleton Loader for Table & Cards -->
+      <div class="p-6" role="status" aria-label="Cargando alertas">
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-bg-dark/60 border-b border-border-dark">
+                <th class="px-6 py-4"><div class="h-4 w-28 bg-slate-800 rounded animate-pulse"></div></th>
+                <th class="px-6 py-4"><div class="h-4 w-16 bg-slate-800 rounded animate-pulse"></div></th>
+                <th class="px-6 py-4"><div class="h-4 w-24 bg-slate-800 rounded animate-pulse"></div></th>
+                <th class="px-6 py-4"><div class="h-4 w-24 bg-slate-800 rounded animate-pulse"></div></th>
+                <th class="px-6 py-4"><div class="h-4 w-20 bg-slate-800 rounded animate-pulse"></div></th>
+                <th class="px-6 py-4 text-center"><div class="h-4 w-20 bg-slate-800 rounded animate-pulse mx-auto"></div></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border-dark/40">
+              <tr class="animate-pulse">
+                <td class="px-6 py-4"><div class="h-4 w-32 bg-slate-800/60 rounded mb-1.5"></div><div class="h-3 w-20 bg-slate-800/40 rounded"></div></td>
+                <td class="px-6 py-4"><div class="h-6 w-20 bg-slate-800/60 rounded-full"></div></td>
+                <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-800/50 rounded"></div></td>
+                <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-800/50 rounded"></div></td>
+                <td class="px-6 py-4"><div class="h-7 w-24 bg-slate-800/60 rounded-xl"></div></td>
+                <td class="px-6 py-4 text-center"><div class="h-7 w-36 bg-slate-800/60 rounded-lg mx-auto"></div></td>
+              </tr>
+              <tr class="animate-pulse">
+                <td class="px-6 py-4"><div class="h-4 w-36 bg-slate-800/60 rounded mb-1.5"></div><div class="h-3 w-20 bg-slate-800/40 rounded"></div></td>
+                <td class="px-6 py-4"><div class="h-6 w-24 bg-slate-800/60 rounded-full"></div></td>
+                <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-800/50 rounded"></div></td>
+                <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-800/50 rounded"></div></td>
+                <td class="px-6 py-4"><div class="h-7 w-24 bg-slate-800/60 rounded-xl"></div></td>
+                <td class="px-6 py-4 text-center"><div class="h-7 w-36 bg-slate-800/60 rounded-lg mx-auto"></div></td>
+              </tr>
+              <tr class="animate-pulse">
+                <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-800/60 rounded mb-1.5"></div><div class="h-3 w-20 bg-slate-800/40 rounded"></div></td>
+                <td class="px-6 py-4"><div class="h-6 w-20 bg-slate-800/60 rounded-full"></div></td>
+                <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-800/50 rounded"></div></td>
+                <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-800/50 rounded"></div></td>
+                <td class="px-6 py-4"><div class="h-7 w-24 bg-slate-800/60 rounded-xl"></div></td>
+                <td class="px-6 py-4 text-center"><div class="h-7 w-36 bg-slate-800/60 rounded-lg mx-auto"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Mobile Skeleton Cards -->
+        <div class="md:hidden space-y-4">
+          <div class="h-36 bg-slate-800/30 rounded-2xl animate-pulse p-4 space-y-3">
+            <div class="flex justify-between"><div class="h-4 w-28 bg-slate-700/50 rounded"></div><div class="h-5 w-16 bg-slate-700/50 rounded-full"></div></div>
+            <div class="h-3 w-40 bg-slate-700/40 rounded"></div>
+            <div class="h-8 w-full bg-slate-700/30 rounded-lg mt-2"></div>
+          </div>
+        </div>
+        <span class="sr-only">Cargando alertas de seguridad...</span>
+      </div>
+    } @else if (alerts().length === 0) {
+      <div class="p-12 text-center text-slate-400 space-y-2">
+        <svg class="h-12 w-12 text-slate-500 mx-auto" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0V9a2 2 0 00-2-2H6a2 2 0 00-2 2v2m16 0h-4v-2M4 12h4v-2m0 2v2H6v-2m2 0v2h4v-2"/>
+        </svg>
+        <p class="font-medium text-white text-base">No hay alertas registradas aún</p>
+        <p class="text-xs">Las alertas ciudadanas y de botón de pánico aparecerán aquí automáticamente.</p>
+      </div>
+    } @else {
+      <!-- Mobile Responsive Card View (visible on < md screens) -->
+      <div class="block md:hidden divide-y divide-border-dark/60 p-3 space-y-3">
+        @for (alert of alerts(); track alert.id) {
+          <article class="p-4 bg-bg-dark/40 rounded-xl border border-border-dark/60 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-semibold text-white text-sm">{{ alert.usuario_nombre || 'Desconocido' }}</h3>
+                <p class="text-xs text-slate-400">DNI: {{ alert.usuario_dni || 'N/A' }}</p>
+              </div>
+              <span 
+                [class]="alert.tipo_incidencia === 'Emergencia' 
+                  ? 'bg-red-500/15 text-red-400 border border-red-500/25 px-2.5 py-0.5 rounded-full text-xs font-semibold' 
+                  : 'bg-primary/15 text-primary-pastel border border-primary/25 px-2.5 py-0.5 rounded-full text-xs font-semibold'"
+              >
+                {{ alert.tipo_incidencia }}
+              </span>
+            </div>
+
+            <div class="text-xs text-slate-300 space-y-1">
+              <p><span class="text-slate-400 font-medium">Ingreso:</span> {{ formatDate(alert.fecha_ingreso) }}</p>
+              <p>
+                <span class="text-slate-400 font-medium">Suceso:</span> {{ formatDate(alert.fecha_suceso) }}
+                @if (isSameInstant(alert.fecha_ingreso, alert.fecha_suceso)) {
+                  <span class="text-red-400 font-semibold ml-1">💥 Pánico</span>
+                }
+              </p>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-border-dark/40 gap-2">
+              <select 
+                [value]="alert.estado"
+                (change)="onEstadoChange(alert.id, $event)"
+                aria-label="Actualizar estado de la alerta"
+                [class]="
+                  alert.estado === 'Atendido' ? 'bg-green-500/15 text-green-400 border border-green-500/25' :
+                  alert.estado === 'En camino' ? 'bg-primary/20 text-primary-pastel border border-primary/25' :
+                  alert.estado === 'Falsa Alarma' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20' :
+                  alert.estado === 'Cancelado' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                  'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                "
+                class="px-2 py-1 rounded-lg text-xs font-semibold focus:outline-none cursor-pointer border font-sans"
+              >
+                <option value="Aun no atendido" class="bg-card-dark text-slate-100">Aun no atendido</option>
+                <option value="En camino" class="bg-card-dark text-slate-100">En camino</option>
+                <option value="Atendido" class="bg-card-dark text-slate-100">Atendido</option>
+                <option value="Falsa Alarma" class="bg-card-dark text-slate-100">Falsa Alarma</option>
+                <option value="Cancelado" class="bg-card-dark text-slate-100">Cancelado</option>
+              </select>
+
+              <div class="flex items-center gap-1.5">
+                <button 
+                  (click)="verDetalles(alert)"
+                  class="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg text-secondary-pastel bg-secondary/10 border border-secondary/20 hover:bg-secondary/20 transition cursor-pointer"
+                >
+                  Detalles
+                </button>
+                <button 
+                  (click)="verMapa(alert)"
+                  class="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg text-primary-pastel bg-primary/10 border border-primary/20 hover:bg-primary/20 transition cursor-pointer"
+                >
+                  Mapa
+                </button>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+
+      <!-- Desktop Table View (visible on >= md screens - 6 Columns) -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-bg-dark/60 border-b border-border-dark text-slate-300 text-xs font-semibold uppercase tracking-wider">
+              <th scope="col" class="px-6 py-4">Ciudadano / DNI</th>
+              <th scope="col" class="px-6 py-4">Tipo</th>
+              <th scope="col" class="px-6 py-4">Fecha de Ingreso</th>
+              <th scope="col" class="px-6 py-4">Fecha del Suceso</th>
+              <th scope="col" class="px-6 py-4">Estado</th>
+              <th scope="col" class="px-6 py-4 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border-dark/60 text-sm">
+            @for (alert of alerts(); track alert.id) {
+              <tr class="hover:bg-slate-800/30 transition duration-150">
+                <td class="px-6 py-4">
+                  <div class="font-semibold text-white">{{ alert.usuario_nombre || 'Desconocido' }}</div>
+                  <div class="text-xs text-slate-400">DNI: {{ alert.usuario_dni || 'N/A' }}</div>
+                </td>
+                <td class="px-6 py-4">
+                  <span 
+                    [class]="alert.tipo_incidencia === 'Emergencia' 
+                      ? 'bg-red-500/10 text-red-400 border border-red-500/25 px-3 py-1 rounded-full text-xs font-semibold' 
+                      : 'bg-primary/10 text-primary-pastel border border-primary/20 px-3 py-1 rounded-full text-xs font-semibold'"
+                  >
+                    {{ alert.tipo_incidencia }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-slate-300 font-medium">
+                  {{ formatDate(alert.fecha_ingreso) }}
+                </td>
+                <td class="px-6 py-4 text-slate-400">
+                  {{ formatDate(alert.fecha_suceso) }}
+                  @if (isSameInstant(alert.fecha_ingreso, alert.fecha_suceso)) {
+                    <span class="text-red-400 text-xs block font-semibold mt-0.5">💥 Pánico Inmediato</span>
+                  } @else {
+                    <span class="text-amber-400 text-xs block font-medium mt-0.5">⏱ Diferido</span>
+                  }
+                </td>
+                <td class="px-6 py-4">
+                  <select 
+                    [value]="alert.estado"
+                    (change)="onEstadoChange(alert.id, $event)"
+                    aria-label="Modificar estado de atención"
+                    [class]="
+                      alert.estado === 'Atendido' ? 'bg-green-500/15 text-green-400 border border-green-500/25' :
+                      alert.estado === 'En camino' ? 'bg-primary/20 text-primary-pastel border border-primary/25' :
+                      alert.estado === 'Falsa Alarma' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20' :
+                      alert.estado === 'Cancelado' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                      'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                    "
+                    class="px-2.5 py-1 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer border font-sans"
+                  >
+                    <option value="Aun no atendido" class="bg-card-dark text-slate-100">Aun no atendido</option>
+                    <option value="En camino" class="bg-card-dark text-slate-100">En camino</option>
+                    <option value="Atendido" class="bg-card-dark text-slate-100">Atendido</option>
+                    <option value="Falsa Alarma" class="bg-card-dark text-slate-100">Falsa Alarma</option>
+                    <option value="Cancelado" class="bg-card-dark text-slate-100">Cancelado</option>
+                  </select>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center justify-center space-x-2">
+                    <button 
+                      (click)="verDetalles(alert)"
+                      class="px-3 py-1.5 text-xs font-semibold rounded-lg text-secondary-pastel bg-secondary/10 border border-secondary/20 hover:bg-secondary/20 transition cursor-pointer"
+                    >
+                      Ver Detalles
+                    </button>
+                    <button 
+                      (click)="verMapa(alert)"
+                      class="px-3 py-1.5 text-xs font-semibold rounded-lg text-primary-pastel bg-primary/10 border border-primary/20 hover:bg-primary/20 transition cursor-pointer"
+                    >
+                      Ver Mapa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- MODAL: DETALLES DE ALERTA -->
+@if (showDetailsModal()) {
+  <div 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="alert-details-title"
+    class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-lg p-6 bg-card-dark border border-border-dark rounded-2xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center">
+        <h2 id="alert-details-title" class="text-lg font-bold text-white">Detalles del Reporte</h2>
+        <button 
+          (click)="closeDetailsModal()" 
+          aria-label="Cerrar modal de detalles"
+          class="text-slate-400 hover:text-white transition p-1 cursor-pointer"
+        >
+          <svg class="h-6 w-6" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span class="text-slate-400 text-xs font-semibold uppercase block">Ciudadano</span>
+            <span class="text-white font-medium">{{ selectedAlert()?.usuario_nombre }}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 text-xs font-semibold uppercase block">DNI</span>
+            <span class="text-white font-mono font-medium">{{ selectedAlert()?.usuario_dni }}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 text-xs font-semibold uppercase block">Tipo Incidencia</span>
+            <span class="text-white font-medium">{{ selectedAlert()?.tipo_incidencia }}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 text-xs font-semibold uppercase block">Fecha del Suceso</span>
+            <span class="text-white font-medium">{{ formatDate(selectedAlert()?.fecha_suceso) }}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 text-xs font-semibold uppercase block">Estado</span>
+            <span 
+              [class]="
+                selectedAlert()?.estado === 'Atendido' ? 'text-green-400' :
+                selectedAlert()?.estado === 'En camino' ? 'text-primary-pastel' :
+                selectedAlert()?.estado === 'Falsa Alarma' ? 'text-slate-400' :
+                selectedAlert()?.estado === 'Cancelado' ? 'text-red-400' :
+                'text-amber-400'
+              "
+              class="font-bold uppercase text-xs"
+            >
+              {{ selectedAlert()?.estado }}
+            </span>
+          </div>
+        </div>
+
+        <div class="border-t border-border-dark pt-3">
+          <span class="text-slate-400 text-xs font-semibold uppercase block mb-1">Descripción del Incidente</span>
+          <p class="text-sm text-slate-200 bg-bg-dark/50 p-4 rounded-xl border border-border-dark/60 leading-relaxed">
+            {{ selectedAlert()?.descripcion || 'El ciudadano no proporcionó una descripción adicional para este incidente.' }}
+          </p>
+        </div>
+
+        <!-- Evidencia Multimedia -->
+        <div class="border-t border-border-dark pt-3">
+          <span class="text-slate-400 text-xs font-semibold uppercase block mb-2">Evidencia Fotográfica</span>
+          @if (selectedAlert()?.evidencia_url) {
+            <div class="relative overflow-hidden rounded-xl border border-border-dark/60 bg-slate-900 min-h-[160px] flex items-center justify-center">
+              <img 
+                [src]="mediaUrl + selectedAlert()?.evidencia_url" 
+                alt="Evidencia fotográfica del incidente" 
+                loading="lazy"
+                decoding="async"
+                class="max-h-60 w-full object-contain"
+              >
+            </div>
+            <div class="mt-2 text-right">
+              <a 
+                [href]="mediaUrl + selectedAlert()?.evidencia_url" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="text-xs text-primary-pastel hover:text-white font-semibold transition duration-150 inline-flex items-center gap-1"
+              >
+                Ver imagen completa en pestaña nueva ↗
+              </a>
+            </div>
+          } @else {
+            <div class="text-center p-6 bg-bg-dark/40 rounded-xl border border-dashed border-border-dark/60 text-slate-500 text-xs">
+              Sin archivos multimedia adjuntos.
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button 
+          (click)="closeDetailsModal()"
+          class="min-h-[44px] px-5 py-2.5 bg-bg-dark border border-border-dark text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL: MAPA LEAFLET -->
+@if (showMapModal()) {
+  <div 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="alert-map-title"
+    class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-2xl p-6 bg-card-dark border border-border-dark rounded-2xl shadow-2xl space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 id="alert-map-title" class="text-lg font-bold text-white">Geolocalización del Incidente</h2>
+          <p class="text-xs text-slate-400">Ubicación GPS reportada por el dispositivo</p>
+        </div>
+        <button 
+          (click)="closeMapModal()" 
+          aria-label="Cerrar mapa"
+          class="text-slate-400 hover:text-white transition p-1 cursor-pointer"
+        >
+          <svg class="h-6 w-6" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="relative overflow-hidden rounded-2xl border border-border-dark bg-slate-100 w-full h-[350px]">
+        <div id="map" class="w-full h-full relative z-10"></div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button 
+          (click)="closeMapModal()"
+          class="min-h-[44px] px-5 py-2.5 bg-bg-dark border border-border-dark text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}

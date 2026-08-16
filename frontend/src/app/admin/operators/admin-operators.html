@@ -1,0 +1,551 @@
+<div class="space-y-6 animate-fade-in">
+  <!-- Operators Header & Stats Banner -->
+  <section aria-label="Resumen de operadores" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <div class="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-dark shadow-lg flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-sm font-medium">Total de Operadores</p>
+        @if (isOperatorsLoading()) {
+          <div class="h-9 w-14 bg-slate-700/50 rounded-lg animate-pulse mt-1"></div>
+        } @else {
+          <h3 class="text-3xl font-bold mt-1 text-white">{{ operators().length }}</h3>
+        }
+      </div>
+      <div class="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary-pastel" aria-hidden="true">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-dark shadow-lg flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-sm font-medium">Operador Activo</p>
+        <h3 class="text-base font-bold mt-1 text-primary-pastel truncate max-w-[180px]">{{ authService.currentUser()?.nombre }}</h3>
+        <p class="text-xs text-slate-400 font-mono">DNI: {{ authService.currentUser()?.dni }}</p>
+      </div>
+      <div class="h-12 w-12 bg-green-500/10 rounded-xl flex items-center justify-center text-green-400" aria-hidden="true">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-dark shadow-lg flex items-center justify-between sm:col-span-2 lg:col-span-1">
+      <div>
+        <p class="text-slate-400 text-sm font-medium">Nivel de Acceso</p>
+        <h3 class="text-lg font-bold mt-1 text-white">Privilegio Total</h3>
+        <p class="text-xs text-slate-400">Control y Despacho</p>
+      </div>
+      <div class="h-12 w-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary-pastel" aria-hidden="true">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Operators Table & Actions Card -->
+  <section aria-labelledby="operators-section-heading" class="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden">
+    <!-- Control Bar -->
+    <div class="p-5 sm:p-6 border-b border-border-dark flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+      <div>
+        <h2 id="operators-section-heading" class="text-lg font-bold text-white">Administrador de Operadores</h2>
+        <p class="text-xs text-slate-400">Control de cuentas con acceso a la plataforma de monitoreo</p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <!-- Search Input -->
+        <div class="relative min-w-[240px]">
+          <input 
+            type="text" 
+            [ngModel]="operatorSearchTerm()"
+            (ngModelChange)="operatorSearchTerm.set($event)"
+            placeholder="Buscar por nombre, DNI o contacto..."
+            aria-label="Buscar operadores"
+            class="w-full pl-9 pr-3 py-2 bg-bg-dark border border-border-dark rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel"
+          />
+          <svg class="h-4 w-4 text-slate-500 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+
+        <!-- Refresh Button -->
+        <button 
+          (click)="loadOperators()"
+          [disabled]="isOperatorsLoading()"
+          aria-label="Actualizar lista de operadores"
+          class="px-3 py-2 text-xs font-semibold rounded-xl text-slate-200 bg-bg-dark border border-border-dark hover:bg-bg-dark/50 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+        >
+          <svg class="h-4 w-4" [class.animate-spin]="isOperatorsLoading()" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span>Refrescar</span>
+        </button>
+
+        <!-- Create Operator Button -->
+        <button 
+          (click)="openCreateOperatorModal()"
+          class="min-h-[38px] px-4 py-2 text-xs font-semibold rounded-xl text-white bg-primary hover:bg-primary-pastel transition duration-200 shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+        >
+          <svg class="h-4 w-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>Crear Nuevo Operador</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Operators Content: Skeleton / Empty / Table & Cards -->
+    @if (isOperatorsLoading()) {
+      <div class="p-6" role="status" aria-label="Cargando operadores">
+        <div class="hidden md:block space-y-3">
+          <div class="h-10 bg-slate-800/40 rounded-lg animate-pulse"></div>
+          <div class="h-14 bg-slate-800/20 rounded-xl animate-pulse"></div>
+          <div class="h-14 bg-slate-800/20 rounded-xl animate-pulse"></div>
+          <div class="h-14 bg-slate-800/20 rounded-xl animate-pulse"></div>
+        </div>
+        <div class="md:hidden space-y-3">
+          <div class="h-28 bg-slate-800/30 rounded-xl animate-pulse"></div>
+          <div class="h-28 bg-slate-800/30 rounded-xl animate-pulse"></div>
+        </div>
+      </div>
+    } @else if (filteredOperators().length === 0) {
+      <div class="p-12 text-center text-slate-400 space-y-3">
+        <svg class="h-12 w-12 text-slate-500 mx-auto" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        @if (operatorSearchTerm()) {
+          <p class="font-medium text-white text-base">No se encontraron operadores con ese criterio</p>
+          <p class="text-xs">Prueba buscando con otro nombre, DNI o limpia el filtro de búsqueda.</p>
+        } @else {
+          <p class="font-medium text-white text-base">No hay operadores registrados</p>
+          <p class="text-xs">Haz clic en "Crear Nuevo Operador" para agregar operadores al sistema.</p>
+        }
+      </div>
+    } @else {
+      <!-- Mobile Responsive Card View (< md) -->
+      <div class="block md:hidden divide-y divide-border-dark/60 p-3 space-y-3">
+        @for (op of filteredOperators(); track op.id) {
+          <article class="p-4 bg-bg-dark/40 rounded-xl border border-border-dark/60 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-semibold text-white text-sm flex items-center gap-1.5">
+                  {{ op.nombre }}
+                  @if (authService.currentUser()?.id === op.id) {
+                    <span class="text-[10px] bg-primary/20 text-primary-pastel px-1.5 py-0.5 rounded font-mono font-normal">(Tú)</span>
+                  }
+                </h3>
+                <p class="text-xs text-slate-400 font-mono mt-0.5">DNI: {{ op.dni }}</p>
+              </div>
+              <span class="bg-primary/10 text-primary-pastel border border-primary/20 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase">
+                {{ op.rol }}
+              </span>
+            </div>
+
+            <div class="text-xs text-slate-300 space-y-1">
+              <p><span class="text-slate-400 font-medium">Contacto:</span> {{ op.email_telefono || 'No especificado' }}</p>
+              <p><span class="text-slate-400 font-medium">Registro:</span> {{ formatDate(op.created_at) || 'N/A' }}</p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-border-dark/40">
+              <button 
+                (click)="openEditOperatorModal(op)"
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg text-secondary-pastel bg-secondary/10 border border-secondary/20 hover:bg-secondary/20 transition cursor-pointer flex items-center gap-1"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                <span>Editar</span>
+              </button>
+              
+              @if (authService.currentUser()?.id !== op.id) {
+                <button 
+                  (click)="openDeleteOperatorModal(op)"
+                  class="px-3 py-1.5 text-xs font-semibold rounded-lg text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition cursor-pointer flex items-center gap-1"
+                >
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                  <span>Eliminar</span>
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+
+      <!-- Desktop Table View (>= md screens) -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-bg-dark/60 border-b border-border-dark text-slate-300 text-xs font-semibold uppercase tracking-wider">
+              <th scope="col" class="px-6 py-4">Operador / DNI</th>
+              <th scope="col" class="px-6 py-4">Contacto</th>
+              <th scope="col" class="px-6 py-4">Rol / Privilegio</th>
+              <th scope="col" class="px-6 py-4">Fecha de Registro</th>
+              <th scope="col" class="px-6 py-4 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border-dark/60 text-sm">
+            @for (op of filteredOperators(); track op.id) {
+              <tr class="hover:bg-slate-800/30 transition duration-150">
+                <td class="px-6 py-4">
+                  <div class="font-semibold text-white flex items-center gap-2">
+                    {{ op.nombre }}
+                    @if (authService.currentUser()?.id === op.id) {
+                      <span class="text-[10px] bg-primary/20 text-primary-pastel px-1.5 py-0.5 rounded font-mono font-normal">Sesión Actual</span>
+                    }
+                  </div>
+                  <div class="text-xs text-slate-400 font-mono">DNI: {{ op.dni }}</div>
+                </td>
+                <td class="px-6 py-4 text-slate-300">
+                  {{ op.email_telefono || '—' }}
+                </td>
+                <td class="px-6 py-4">
+                  <span class="bg-primary/10 text-primary-pastel border border-primary/20 px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase">
+                    {{ op.rol }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-slate-400 text-xs">
+                  {{ formatDate(op.created_at) || '—' }}
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center justify-center gap-2">
+                    <button 
+                      (click)="openEditOperatorModal(op)"
+                      class="px-3 py-1.5 text-xs font-semibold rounded-lg text-secondary-pastel bg-secondary/10 border border-secondary/20 hover:bg-secondary/20 transition cursor-pointer flex items-center gap-1"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                      <span>Editar</span>
+                    </button>
+                    
+                    @if (authService.currentUser()?.id !== op.id) {
+                      <button 
+                        (click)="openDeleteOperatorModal(op)"
+                        class="px-3 py-1.5 text-xs font-semibold rounded-lg text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        <span>Eliminar</span>
+                      </button>
+                    } @else {
+                      <span class="text-[11px] text-slate-500 italic px-2">Protegido</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- MODAL: CREAR OPERADOR -->
+@if (showCreateOperatorModal()) {
+  <div 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="create-operator-title"
+    class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-md p-6 bg-card-dark border border-border-dark rounded-2xl shadow-2xl space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 id="create-operator-title" class="text-lg font-bold text-white">Registrar Nuevo Operador</h2>
+          <p class="text-xs text-slate-400">Crear una cuenta administrativa de operador</p>
+        </div>
+        <button 
+          (click)="closeCreateOperatorModal()"
+          aria-label="Cerrar modal de creación"
+          class="text-slate-400 hover:text-white transition p-1 cursor-pointer"
+        >
+          <svg class="h-6 w-6" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      @if (createOperatorError()) {
+        <div role="alert" class="bg-red-500/10 border border-red-500/25 text-red-200 text-xs p-3 rounded-xl flex items-center gap-2">
+          <svg class="h-4 w-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>{{ createOperatorError() }}</span>
+        </div>
+      }
+
+      <form (submit)="onCreateOperator($event)" class="space-y-4">
+        <div>
+          <label for="create-op-name" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Nombre Completo</label>
+          <input 
+            id="create-op-name"
+            type="text" 
+            autocomplete="name"
+            required 
+            [(ngModel)]="newOperatorName" 
+            name="newOpName"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="Ej. Juan Gómez"
+          />
+        </div>
+
+        <div>
+          <label for="create-op-dni" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">DNI (8 dígitos)</label>
+          <input 
+            id="create-op-dni"
+            type="text" 
+            inputmode="numeric"
+            pattern="[0-9]{8}"
+            maxlength="8"
+            autocomplete="username"
+            required 
+            [(ngModel)]="newOperatorDni" 
+            name="newOpDni"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm font-mono"
+            placeholder="12345678"
+          />
+        </div>
+
+        <div>
+          <label for="create-op-email" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Email o Teléfono (Opcional)</label>
+          <input 
+            id="create-op-email"
+            type="text" 
+            autocomplete="email"
+            [(ngModel)]="newOperatorEmail" 
+            name="newOpEmail"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="operador@chaclacayo.gob.pe o 987654321"
+          />
+        </div>
+
+        <div>
+          <label for="create-op-password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Contraseña (Mínimo 6 caracteres)</label>
+          <input 
+            id="create-op-password"
+            type="password" 
+            autocomplete="new-password"
+            minlength="6"
+            required 
+            [(ngModel)]="newOperatorPassword" 
+            name="newOpPassword"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <div class="pt-3 flex space-x-3">
+          <button 
+            type="button"
+            (click)="closeCreateOperatorModal()"
+            class="w-1/2 min-h-[44px] border border-border-dark rounded-xl text-xs font-semibold text-slate-300 hover:bg-bg-dark transition cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit"
+            [disabled]="isCreatingOperator()"
+            class="w-1/2 min-h-[44px] bg-primary hover:bg-primary-pastel text-white text-xs font-semibold rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
+          >
+            @if (isCreatingOperator()) {
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Guardando...</span>
+            } @else {
+              <span>Crear Operador</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- MODAL: EDITAR OPERADOR -->
+@if (showEditOperatorModal()) {
+  <div 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="edit-operator-title"
+    class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-md p-6 bg-card-dark border border-border-dark rounded-2xl shadow-2xl space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 id="edit-operator-title" class="text-lg font-bold text-white">Editar Operador</h2>
+          <p class="text-xs text-slate-400">Actualizar datos de la cuenta de operador</p>
+        </div>
+        <button 
+          (click)="closeEditOperatorModal()"
+          aria-label="Cerrar modal de edición"
+          class="text-slate-400 hover:text-white transition p-1 cursor-pointer"
+        >
+          <svg class="h-6 w-6" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      @if (editOperatorError()) {
+        <div role="alert" class="bg-red-500/10 border border-red-500/25 text-red-200 text-xs p-3 rounded-xl flex items-center gap-2">
+          <svg class="h-4 w-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>{{ editOperatorError() }}</span>
+        </div>
+      }
+
+      <form (submit)="onUpdateOperator($event)" class="space-y-4">
+        <div>
+          <label for="edit-op-name" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Nombre Completo</label>
+          <input 
+            id="edit-op-name"
+            type="text" 
+            autocomplete="name"
+            required 
+            [(ngModel)]="editOperatorName" 
+            name="editOpName"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+          />
+        </div>
+
+        <div>
+          <label for="edit-op-dni" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">DNI (8 dígitos)</label>
+          <input 
+            id="edit-op-dni"
+            type="text" 
+            inputmode="numeric"
+            pattern="[0-9]{8}"
+            maxlength="8"
+            autocomplete="username"
+            required 
+            [(ngModel)]="editOperatorDni" 
+            name="editOpDni"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm font-mono"
+          />
+        </div>
+
+        <div>
+          <label for="edit-op-email" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Email o Teléfono</label>
+          <input 
+            id="edit-op-email"
+            type="text" 
+            autocomplete="email"
+            [(ngModel)]="editOperatorEmail" 
+            name="editOpEmail"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="operador@chaclacayo.gob.pe"
+          />
+        </div>
+
+        <div>
+          <label for="edit-op-password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            Nueva Contraseña <span class="text-slate-500 font-normal lowercase">(dejar en blanco para no modificar)</span>
+          </label>
+          <input 
+            id="edit-op-password"
+            type="password" 
+            autocomplete="new-password"
+            minlength="6"
+            [(ngModel)]="editOperatorPassword" 
+            name="editOpPassword"
+            class="mt-1 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-pastel focus:border-transparent text-sm"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <div class="pt-3 flex space-x-3">
+          <button 
+            type="button"
+            (click)="closeEditOperatorModal()"
+            class="w-1/2 min-h-[44px] border border-border-dark rounded-xl text-xs font-semibold text-slate-300 hover:bg-bg-dark transition cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit"
+            [disabled]="isUpdatingOperator()"
+            class="w-1/2 min-h-[44px] bg-secondary hover:bg-secondary-pastel text-white text-xs font-semibold rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
+          >
+            @if (isUpdatingOperator()) {
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Guardando...</span>
+            } @else {
+              <span>Actualizar Operador</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- MODAL: CONFIRMAR ELIMINACIÓN DE OPERADOR -->
+@if (showDeleteOperatorModal()) {
+  <div 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="delete-operator-title"
+    class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-md p-6 bg-card-dark border border-border-dark rounded-2xl shadow-2xl space-y-5">
+      <div class="flex items-center space-x-3 text-red-400">
+        <div class="h-10 w-10 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20 shrink-0">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 id="delete-operator-title" class="text-base font-bold text-white">¿Eliminar cuenta de operador?</h2>
+          <p class="text-xs text-slate-400">Esta acción no se puede deshacer</p>
+        </div>
+      </div>
+
+      @if (deleteOperatorError()) {
+        <div role="alert" class="bg-red-500/10 border border-red-500/25 text-red-200 text-xs p-3 rounded-xl">
+          {{ deleteOperatorError() }}
+        </div>
+      }
+
+      <p class="text-xs text-slate-300 leading-relaxed bg-bg-dark/50 p-3.5 rounded-xl border border-border-dark/60">
+        Se revocará el acceso al sistema para el operador <strong class="text-white">{{ operatorToDelete()?.nombre }}</strong> (DNI: {{ operatorToDelete()?.dni }}).
+      </p>
+
+      <div class="flex space-x-3 pt-2">
+        <button 
+          type="button"
+          (click)="closeDeleteOperatorModal()"
+          class="w-1/2 min-h-[44px] border border-border-dark rounded-xl text-xs font-semibold text-slate-300 hover:bg-bg-dark transition cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="button"
+          (click)="onConfirmDeleteOperator()"
+          [disabled]="isDeletingOperator()"
+          class="w-1/2 min-h-[44px] bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
+        >
+          @if (isDeletingOperator()) {
+            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Eliminando...</span>
+          } @else {
+            <span>Sí, Eliminar</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

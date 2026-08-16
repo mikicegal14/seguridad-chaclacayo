@@ -1,0 +1,204 @@
+<div class="w-full">
+  @if (showForm()) {
+    <!-- View 2: Formulario de Reporte Detallado -->
+    <section aria-labelledby="form-reporte-title" class="w-full space-y-6 text-left animate-fade-in bg-card-dark/80 p-5 sm:p-6 rounded-2xl border border-border-dark shadow-xl">
+      <div class="flex items-center justify-between border-b border-border-dark pb-4">
+        <div>
+          <h2 id="form-reporte-title" class="text-lg font-bold text-white">Reportar Incidencia</h2>
+          <p class="text-xs text-slate-400">Complete los datos del suceso para Serenazgo</p>
+        </div>
+        <button 
+          (click)="cancelReport()"
+          class="min-h-[40px] px-3.5 py-1.5 text-xs font-semibold rounded-xl text-slate-300 bg-bg-dark border border-border-dark hover:bg-bg-dark/50 transition cursor-pointer"
+        >
+          Volver
+        </button>
+      </div>
+
+      @if (statusMessage()) {
+        <div role="alert" class="w-full bg-red-500/10 border border-red-500/25 text-red-300 text-xs p-3.5 rounded-xl">
+          <div class="font-bold mb-0.5">{{ statusTitle() }}</div>
+          <div>{{ statusMessage() }}</div>
+        </div>
+      }
+
+      <form (submit)="submitDetailedReport($event)" class="space-y-4">
+        <!-- Tipo de Incidencia -->
+        <div>
+          <label for="tipo-incidencia" class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Tipo de Incidencia</label>
+          <select 
+            id="tipo-incidencia"
+            name="tipoIncidencia"
+            [(ngModel)]="tipoIncidencia"
+            class="mt-1.5 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-pastel focus:border-transparent text-sm cursor-pointer font-sans"
+          >
+            <option value="Asalto">Asalto / Robo</option>
+            <option value="Reporte">Reporte General / Sospechoso</option>
+            <option value="Accidente">Accidente de Tránsito</option>
+            <option value="Vandalismo">Vandalismo / Disturbio</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+
+        <!-- Fecha y Hora del Suceso -->
+        <div>
+          <label for="fecha-suceso" class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Fecha / Hora del Suceso</label>
+          <input 
+            id="fecha-suceso"
+            type="datetime-local" 
+            name="fechaSuceso"
+            [(ngModel)]="fechaSuceso"
+            required
+            class="mt-1.5 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-pastel focus:border-transparent text-sm font-sans"
+          />
+        </div>
+
+        <!-- Descripción -->
+        <div>
+          <label for="desc-incidencia" class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Descripción del Hecho</label>
+          <textarea 
+            id="desc-incidencia"
+            name="descripcion"
+            [(ngModel)]="descripcion"
+            rows="3"
+            class="mt-1.5 block w-full px-3 py-2.5 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-pastel focus:border-transparent text-sm leading-relaxed font-sans"
+            placeholder="Detalles sobre el suceso (ej. vehículos involucrados, vestimenta de sospechosos, situación actual)"
+          ></textarea>
+        </div>
+
+        <!-- Evidencia Multimedia -->
+        <div>
+          <span class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Evidencia Fotográfica (Opcional)</span>
+          
+          <div class="mt-1.5 flex flex-col items-center justify-center bg-bg-dark border border-dashed border-border-dark rounded-xl p-4 relative hover:border-primary-pastel/60 transition duration-200">
+            @if (imagePreview()) {
+              <div class="relative w-full rounded-lg overflow-hidden border border-border-dark">
+                <img [src]="imagePreview()" alt="Vista previa de la evidencia" class="max-h-48 w-full object-cover">
+                <button 
+                  type="button" 
+                  (click)="removePhoto()"
+                  aria-label="Eliminar fotografía adjunta"
+                  class="absolute top-2 right-2 min-h-[36px] min-w-[36px] bg-slate-950/80 hover:bg-slate-950 text-white rounded-full p-2 transition flex items-center justify-center cursor-pointer"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            } @else {
+              <svg class="h-10 w-10 text-slate-500 mb-1" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span class="text-xs text-slate-400 font-semibold mb-1">Cámara o Galería</span>
+              <span class="text-[10px] text-slate-500">Toca para tomar foto o adjuntar captura</span>
+              <input 
+                id="file-evidence"
+                type="file" 
+                accept="image/*" 
+                capture="environment"
+                (change)="onFileSelected($event)"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                aria-label="Subir foto de evidencia"
+              />
+            }
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+          <button
+            type="submit"
+            [disabled]="isLoading()"
+            class="w-full min-h-[48px] flex items-center justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-primary to-secondary-pastel hover:from-primary-pastel hover:to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg cursor-pointer"
+          >
+            @if (isLoading()) {
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" aria-hidden="true" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Transmitiendo ubicación y reporte...
+            } @else {
+              Enviar Reporte con Ubicación GPS
+            }
+          </button>
+        </div>
+      </form>
+    </section>
+  } @else {
+    <!-- View 1: Main Dashboard (Panic Button) -->
+    <section aria-label="Botón de pánico de emergencia" class="w-full space-y-8 animate-fade-in">
+      
+      <!-- Status / Feedback Message -->
+      @if (statusMessage()) {
+        <div 
+          role="alert"
+          [class]="statusType() === 'success' 
+            ? 'w-full bg-green-500/15 border border-green-500/30 text-green-300 text-sm p-4 rounded-2xl shadow-lg' 
+            : 'w-full bg-red-500/15 border border-red-500/30 text-red-300 text-sm p-4 rounded-2xl shadow-lg'"
+        >
+          <div class="font-bold mb-1">{{ statusTitle() }}</div>
+          <div class="text-xs text-slate-300">{{ statusMessage() }}</div>
+        </div>
+      }
+
+      <!-- Panic Button Section -->
+      <div class="flex flex-col items-center justify-center space-y-4 py-8">
+        <div class="relative flex items-center justify-center">
+          
+          <!-- Animated Pulse Waves -->
+          <div 
+            class="absolute w-56 h-56 rounded-full bg-red-500/20 animate-ping opacity-75 pointer-events-none"
+            [class.hidden]="!isPulsing()"
+            aria-hidden="true"
+          ></div>
+          <div 
+            class="absolute w-64 h-64 rounded-full bg-primary-pastel/15 animate-pulse pointer-events-none"
+            [class.hidden]="!isPulsing()"
+            aria-hidden="true"
+          ></div>
+
+          <!-- Giant Red Panic Button -->
+          <button
+            (click)="triggerPanic()"
+            [disabled]="isLoading()"
+            aria-label="Presionar botón de pánico para enviar alerta inmediata a serenazgo con coordenadas GPS"
+            class="relative w-48 h-48 rounded-full bg-gradient-to-br from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-extrabold text-2xl tracking-wide border-8 border-bg-dark shadow-2xl flex flex-col items-center justify-center transition-all duration-300 active:scale-95 disabled:opacity-50 select-none cursor-pointer focus:outline-none"
+            style="box-shadow: 0 0 40px rgba(239, 68, 68, 0.4), inset 0 4px 10px rgba(255,255,255,0.25);"
+          >
+            @if (isLoading()) {
+              <svg class="animate-spin h-10 w-10 text-white" aria-hidden="true" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span class="text-xs font-semibold mt-2 tracking-widest uppercase">Enviando...</span>
+            } @else {
+              <svg class="h-12 w-12 text-white drop-shadow mb-1" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              <span class="drop-shadow-md text-3xl font-black uppercase tracking-wider">PÁNICO</span>
+            }
+          </button>
+        </div>
+        
+        <p class="text-slate-400 text-xs font-medium max-w-xs leading-relaxed mt-12 text-center">
+          Presiona el botón rojo en caso de emergencias graves que requieran atención inmediata de serenazgo.
+        </p>
+      </div>
+
+      <!-- Secondary Action Card -->
+      <div class="w-full bg-card-dark p-5 rounded-2xl border border-border-dark flex items-center justify-between shadow-lg">
+        <div class="text-left">
+          <h3 class="text-sm font-semibold text-white">¿Deseas reportar otra incidencia?</h3>
+          <p class="text-xs text-slate-400">Robos, accidentes o vandalismo</p>
+        </div>
+        <button 
+          (click)="showForm.set(true)"
+          class="min-h-[44px] px-4 py-2 text-xs font-semibold rounded-xl text-primary-pastel bg-primary/10 border border-primary/20 hover:bg-primary/20 transition duration-200 cursor-pointer"
+        >
+          Registrar
+        </button>
+      </div>
+    </section>
+  }
+</div>

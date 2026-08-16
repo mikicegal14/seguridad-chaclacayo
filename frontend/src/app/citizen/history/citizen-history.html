@@ -1,0 +1,112 @@
+<section aria-labelledby="history-reports-heading" class="w-full space-y-6 text-left animate-fade-in flex flex-col h-full max-h-[75vh]">
+  <div class="flex justify-between items-center border-b border-border-dark pb-3">
+    <div>
+      <h2 id="history-reports-heading" class="text-lg font-bold text-white">Historial de Reportes</h2>
+      <p class="text-xs text-slate-400">Estado de tus solicitudes en tiempo real</p>
+    </div>
+    <button 
+      (click)="loadMisReportes()"
+      [disabled]="isReportsLoading()"
+      aria-label="Actualizar lista de reportes"
+      class="min-h-[40px] min-w-[40px] flex items-center justify-center p-2 rounded-xl text-slate-300 bg-bg-dark border border-border-dark hover:bg-bg-dark/50 transition cursor-pointer disabled:opacity-50"
+    >
+      <svg class="h-4 w-4" [class.animate-spin]="isReportsLoading()" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+    </button>
+  </div>
+
+  @if (isReportsLoading()) {
+    <!-- Skeleton Loader for History -->
+    <div class="space-y-3 overflow-y-auto pr-1 flex-grow" role="status" aria-label="Cargando historial de reportes">
+      <div class="bg-card-dark p-4 rounded-2xl border border-border-dark/60 shadow-md space-y-3 animate-pulse">
+        <div class="flex justify-between items-center">
+          <div class="h-4 w-20 bg-slate-800 rounded-full"></div>
+          <div class="h-4 w-16 bg-slate-800 rounded-full"></div>
+        </div>
+        <div class="h-3 w-32 bg-slate-800/70 rounded"></div>
+        <div class="h-10 w-full bg-slate-800/40 rounded-xl"></div>
+      </div>
+      <div class="bg-card-dark p-4 rounded-2xl border border-border-dark/60 shadow-md space-y-3 animate-pulse">
+        <div class="flex justify-between items-center">
+          <div class="h-4 w-24 bg-slate-800 rounded-full"></div>
+          <div class="h-4 w-16 bg-slate-800 rounded-full"></div>
+        </div>
+        <div class="h-3 w-28 bg-slate-800/70 rounded"></div>
+        <div class="h-10 w-full bg-slate-800/40 rounded-xl"></div>
+      </div>
+      <div class="bg-card-dark p-4 rounded-2xl border border-border-dark/60 shadow-md space-y-3 animate-pulse">
+        <div class="flex justify-between items-center">
+          <div class="h-4 w-20 bg-slate-800 rounded-full"></div>
+          <div class="h-4 w-16 bg-slate-800 rounded-full"></div>
+        </div>
+        <div class="h-3 w-36 bg-slate-800/70 rounded"></div>
+      </div>
+      <span class="sr-only">Cargando tus reportes...</span>
+    </div>
+  } @else if (misReportes().length === 0) {
+    <div class="p-12 text-center text-slate-400 space-y-2 bg-card-dark rounded-2xl border border-border-dark my-auto">
+      <svg class="h-12 w-12 text-slate-600 mx-auto" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+      </svg>
+      <p class="font-medium text-white text-sm">No has realizado reportes aún</p>
+      <p class="text-[11px]">Cualquier alerta que emitas se registrará aquí para su seguimiento.</p>
+    </div>
+  } @else {
+    <div class="space-y-4 overflow-y-auto pr-1 flex-grow">
+      @for (report of misReportes(); track report.id) {
+        <article class="bg-card-dark p-4 rounded-2xl border border-border-dark/60 shadow-md space-y-3">
+          <div class="flex justify-between items-start">
+            <div>
+              <span 
+                [class]="report.tipo_incidencia === 'Emergencia' 
+                  ? 'bg-red-500/10 text-red-400 border border-red-500/25 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase' 
+                  : 'bg-primary/10 text-primary-pastel border border-primary/20 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase'"
+              >
+                {{ report.tipo_incidencia }}
+              </span>
+              <span class="text-[10px] text-slate-400 block mt-1.5 font-mono">
+                Código: #{{ report.id }}
+              </span>
+            </div>
+
+            <!-- Status Badge -->
+            <span 
+              [class]="
+                report.estado === 'Atendido' ? 'bg-green-500/15 text-green-400 border border-green-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold' :
+                report.estado === 'En camino' ? 'bg-primary/20 text-primary-pastel border border-primary/25 px-2.5 py-0.5 rounded-full text-[10px] font-bold' :
+                report.estado === 'Falsa Alarma' ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold' :
+                report.estado === 'Cancelado' ? 'bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold' :
+                'bg-amber-500/15 text-amber-400 border border-amber-500/25 px-2.5 py-0.5 rounded-full text-[10px] font-bold'
+              "
+            >
+              {{ report.estado }}
+            </span>
+          </div>
+
+          <div class="text-xs text-slate-300">
+            <span class="font-semibold text-slate-400">Fecha:</span> {{ formatDate(report.fecha_suceso) }}
+          </div>
+
+          @if (report.descripcion) {
+            <p class="text-xs text-slate-200 bg-bg-dark/40 p-2.5 rounded-xl border border-border-dark/40 leading-relaxed max-h-20 overflow-y-auto font-sans">
+              {{ report.descripcion }}
+            </p>
+          }
+
+          @if (report.evidencia_url) {
+            <div class="relative overflow-hidden rounded-xl border border-border-dark/40 h-32 w-full bg-slate-900">
+              <img 
+                [src]="mediaUrl + report.evidencia_url" 
+                alt="Evidencia fotográfica adjunta al reporte" 
+                loading="lazy"
+                decoding="async"
+                class="w-full h-full object-cover"
+              >
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>
