@@ -45,6 +45,11 @@ jobs:
     name: 🌐 Deploy Frontend (S3 + CloudFront)
     if: ${{ github.event_name == 'push' || inputs.deploy_all == true || inputs.deploy_frontend == true }}
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
     defaults:
       run:
         working-directory: ./frontend
@@ -67,6 +72,7 @@ jobs:
         run: npm run build -- --configuration production
 
       - name: 🔑 Configurar Credenciales AWS
+        if: env.AWS_ACCESS_KEY_ID != '' && env.AWS_SECRET_ACCESS_KEY != ''
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -74,15 +80,19 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: 🚀 Sincronizar archivos a S3
+        if: env.AWS_ACCESS_KEY_ID != '' && env.AWS_S3_BUCKET_NAME != ''
         run: |
           aws s3 sync dist/frontend/browser s3://${{ secrets.AWS_S3_BUCKET_NAME }} --delete
 
       - name: 🔄 Invalidar caché de CloudFront
-        env:
-          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
         if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
         run: |
           aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
+
+      - name: ℹ️ Estado de despliegue Frontend
+        if: env.AWS_ACCESS_KEY_ID == '' || env.AWS_S3_BUCKET_NAME == ''
+        run: |
+          echo "ℹ️ [INFO] Frontend compilado con éxito. Para sincronizar a S3, configura los secretos AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY y AWS_S3_BUCKET_NAME en GitHub Settings > Secrets."
 
   # =========================================================================
   # 2. BACKEND (EC2 + Docker)
@@ -91,12 +101,16 @@ jobs:
     name: ⚙️ Deploy Backend (EC2)
     if: ${{ github.event_name == 'push' || inputs.deploy_all == true || inputs.deploy_backend == true }}
     runs-on: ubuntu-latest
+    env:
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
     steps:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
 
       - name: 🚀 Desplegar en Instancia EC2 vía SSH
+        if: env.EC2_HOST != '' && env.EC2_SSH_KEY != ''
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -152,6 +166,11 @@ jobs:
               seguridad-backend:latest
 
             echo "✅ Backend desplegado y ejecutándose exitosamente."
+
+      - name: ℹ️ Estado de despliegue Backend
+        if: env.EC2_HOST == '' || env.EC2_SSH_KEY == ''
+        run: |
+          echo "ℹ️ [INFO] Código validado. Para desplegar en el servidor EC2, configura los secretos EC2_HOST y EC2_SSH_KEY en GitHub Settings > Secrets."
 
   # =========================================================================
   # 3. ANDROID APK BUILD (Independent artifact)
