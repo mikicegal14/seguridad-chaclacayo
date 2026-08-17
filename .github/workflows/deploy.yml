@@ -211,5 +211,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ (inputs.apk_build_type == 'release' && 'citizen-security-release-apk') || 'citizen-security-debug-apk' }}
-          path: citizen-android/app/build/outputs/apk/*/*/*.apk
+          path: citizen-android/app/build/outputs/apk/**/*.apk
           retention-days: 30
