@@ -2,6 +2,7 @@ package com.seguridad.chaclacayo.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.google.gson.Gson
 import com.seguridad.chaclacayo.BuildConfig
 import com.seguridad.chaclacayo.data.model.User
 
