@@ -34,31 +34,89 @@ resource "aws_cloudfront_origin_access_control" "frontend_oac" {
   signing_protocol                  = "sigv4"
 }
 
-# Distribución CloudFront
+# Distribución CloudFront (Frontend Web + Proxy Backend EC2 bajo HTTPS)
 resource "aws_cloudfront_distribution" "frontend_distribution" {
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
-  price_class         = "PriceClass_100" # Zonas de menor costo (US, Europa, etc. cubiertas por Free Tier)
+  price_class         = "PriceClass_100" # Zonas de menor costo (Free Tier)
 
+  # Origen 1: Archivos estáticos en S3 (Frontend Angular)
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
     origin_id                = "S3-${aws_s3_bucket.frontend.id}"
     origin_access_control_id = aws_cloudfront_origin_access_control.frontend_oac.id
   }
 
+  # Origen 2: Servidor Backend EC2 en puerto 3000
+  origin {
+    domain_name = aws_eip.backend_eip.public_dns != "" ? aws_eip.backend_eip.public_dns : aws_eip.backend_eip.public_ip
+    origin_id   = "EC2-Backend"
+
+    custom_origin_config {
+      http_port                = var.backend_port # 3000
+      https_port               = 443
+      origin_protocol_policy   = "http-only"
+      origin_ssl_protocols     = ["TLSv1.2"]
+      origin_read_timeout      = 60
+      origin_keepalive_timeout = 60
+    }
+  }
+
+  # Comportamiento por defecto: Servir la SPA desde S3
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "S3-${aws_s3_bucket.frontend.id}"
     viewer_protocol_policy = "redirect-to-https"
 
-    # Política administrada por AWS de optimización de caché (CachingOptimized)
+    # Managed Policy: CachingOptimized
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
   }
 
+  # Comportamiento para la API REST (/api/*) hacia EC2 con HTTPS
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "EC2-Backend"
+
+    viewer_protocol_policy = "redirect-to-https"
+
+    # Managed Policy: CachingDisabled (para que la API responda siempre en tiempo real)
+    cache_policy_id = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+    # Managed Policy: AllViewerExceptHostHeader (reenvía auth headers, body, cookies y query strings)
+    origin_request_policy_id = "b689b0a8-53d0-40ab-baf2-68738e2966ac"
+  }
+
+  # Comportamiento para WebSockets / Socket.IO (/socket.io/*)
+  ordered_cache_behavior {
+    path_pattern     = "/socket.io/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "EC2-Backend"
+
+    viewer_protocol_policy = "redirect-to-https"
+
+    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+    origin_request_policy_id = "b689b0a8-53d0-40ab-baf2-68738e2966ac"
+  }
+
+  # Comportamiento para subida y visualización de fotos/evidencias (/uploads/*)
+  ordered_cache_behavior {
+    path_pattern     = "/uploads/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "EC2-Backend"
+
+    viewer_protocol_policy = "redirect-to-https"
+
+    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+    origin_request_policy_id = "b689b0a8-53d0-40ab-baf2-68738e2966ac"
+  }
+
   # Configuración para SPA (Single Page Application / Angular):
-  # Redirige rutas 403 y 404 a index.html con HTTP 200 para que el router de Angular gestione la ruta
+  # Redirige rutas 403 y 404 a index.html con HTTP 200 para que el router de Angular gestione la navegación
   custom_error_response {
     error_code            = 403
     response_code         = 200

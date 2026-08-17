@@ -68,15 +68,6 @@ jobs:
       - name: 📦 Instalar dependencias
         run: npm ci
 
-      - name: ⚙️ Configurar URL de Backend en Frontend
-        run: |
-          BACKEND_HOST="${{ secrets.EC2_HOST }}"
-          if [ -n "$BACKEND_HOST" ]; then
-            echo "Inyectando EC2_HOST: $BACKEND_HOST en environment.ts"
-            sed -i "s|34.205.59.27|$BACKEND_HOST|g" src/environments/environment.ts
-            sed -i "s|localhost:3000|${BACKEND_HOST}:3000|g" src/environments/environment.ts
-          fi
-
       - name: 🔨 Compilar Angular (Producción)
         run: npm run build -- --configuration production
 
