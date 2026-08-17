@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val backendUrl = project.findProperty("BACKEND_URL") as? String ?: "http://34.205.59.27:3000"
+
 android {
     namespace = "com.seguridad.chaclacayo"
     compileSdk = 34
@@ -13,6 +15,8 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
+
+        buildConfigField("String", "DEFAULT_SERVER_URL", "\"$backendUrl\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -38,6 +42,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"

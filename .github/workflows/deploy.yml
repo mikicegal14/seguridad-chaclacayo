@@ -68,6 +68,15 @@ jobs:
       - name: 📦 Instalar dependencias
         run: npm ci
 
+      - name: ⚙️ Configurar URL de Backend en Frontend
+        run: |
+          BACKEND_HOST="${{ secrets.EC2_HOST }}"
+          if [ -n "$BACKEND_HOST" ]; then
+            echo "Inyectando EC2_HOST: $BACKEND_HOST en environment.ts"
+            sed -i "s|34.205.59.27|$BACKEND_HOST|g" src/environments/environment.ts
+            sed -i "s|localhost:3000|${BACKEND_HOST}:3000|g" src/environments/environment.ts
+          fi
+
       - name: 🔨 Compilar Angular (Producción)
         run: npm run build -- --configuration production
 
@@ -201,11 +210,23 @@ jobs:
 
       - name: 🔨 Compilar APK Debug
         if: ${{ github.event_name == 'push' || inputs.apk_build_type == 'debug' || inputs.apk_build_type == '' }}
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          BACKEND_HOST="${{ secrets.EC2_HOST }}"
+          if [ -n "$BACKEND_HOST" ]; then
+            ./gradlew assembleDebug -PBACKEND_URL="http://${BACKEND_HOST}:3000" --no-daemon
+          else
+            ./gradlew assembleDebug --no-daemon
+          fi
 
       - name: 🔨 Compilar APK Release
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apk_build_type == 'release' }}
-        run: ./gradlew assembleRelease --no-daemon
+        run: |
+          BACKEND_HOST="${{ secrets.EC2_HOST }}"
+          if [ -n "$BACKEND_HOST" ]; then
+            ./gradlew assembleRelease -PBACKEND_URL="http://${BACKEND_HOST}:3000" --no-daemon
+          else
+            ./gradlew assembleRelease --no-daemon
+          fi
 
       - name: 📤 Subir APK como Artifact Descargable
         uses: actions/upload-artifact@v4

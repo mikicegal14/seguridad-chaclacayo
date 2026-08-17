@@ -2,7 +2,7 @@ package com.seguridad.chaclacayo.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.google.gson.Gson
+import com.seguridad.chaclacayo.BuildConfig
 import com.seguridad.chaclacayo.data.model.User
 
 class PrefsManager(context: Context) {
@@ -13,7 +13,7 @@ class PrefsManager(context: Context) {
         private const val KEY_TOKEN = "jwt_token"
         private const val KEY_USER = "user_profile"
         private const val KEY_SERVER_URL = "server_url"
-        private const val DEFAULT_SERVER_URL = "http://10.0.2.2:3000"
+        private val DEFAULT_SERVER_URL = BuildConfig.DEFAULT_SERVER_URL
     }
 
     var token: String?
