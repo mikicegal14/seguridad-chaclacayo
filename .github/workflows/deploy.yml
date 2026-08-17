@@ -130,18 +130,24 @@ jobs:
             set -e
             echo "🚀 Iniciando despliegue del Backend..."
             
-            # Crear directorio base si no existe
-            sudo mkdir -p /app/backend
+            # Preparar directorio base
+            sudo mkdir -p /app
             sudo chown -R $USER:$USER /app
             cd /app
 
-            # Si existe repositorio git, actualizar; sino clonar
+            # Sincronizar repositorio de manera segura
             if [ -d ".git" ]; then
               git fetch --all
               git reset --hard origin/main
             else
-              git clone ${{ github.server_url }}/${{ github.repository }}.git .
+              git init -b main
+              git remote add origin ${{ github.server_url }}/${{ github.repository }}.git || git remote set-url origin ${{ github.server_url }}/${{ github.repository }}.git
+              git fetch origin main
+              git reset --hard origin/main
             fi
+
+            # Asegurar que el servicio de Docker esté corriendo
+            sudo systemctl start docker || true
 
             cd /app/backend
 
