@@ -15,8 +15,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
@@ -35,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -145,46 +148,41 @@ fun ScrollerLayout(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(CardDark.copy(alpha = 0.6f))
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .background(CardDark.copy(alpha = 0.8f))
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 12.dp)
+            ) {
                 Text(
                     text = "Seguridad Vecinal",
-                    fontSize = 17.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color.White,
+                    maxLines = 1
                 )
                 Text(
-                    text = "Chaclacayo Alerta · Ciudadano",
+                    text = prefsManager.user?.nombre?.let { "👤 $it" } ?: "Chaclacayo Alerta · Ciudadano",
                     fontSize = 11.sp,
-                    color = Slate400
+                    color = Slate400,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             
-            // Name & Logout
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Button(
+                onClick = onLogout,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0x1AFF5555)),
+                border = BorderStroke(1.dp, Color(0x33FF5555)),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                modifier = Modifier.height(32.dp)
             ) {
-                Text(
-                    text = prefsManager.user?.nombre ?: "",
-                    fontSize = 12.sp,
-                    color = Slate300,
-                    fontWeight = FontWeight.Bold
-                )
-                Button(
-                    onClick = onLogout,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0x1AFF5555)),
-                    border = BorderStroke(1.dp, Color(0x33FF5555)),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(30.dp)
-                ) {
-                    Text("Salir", color = Color(0xFFFF8888), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                }
+                Text("Salir", color = Color(0xFFFF8888), fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -408,7 +406,8 @@ fun PanicTab(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp),
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -418,7 +417,7 @@ fun PanicTab(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = if (feedbackType == "success") Color(0x1A22C55E) else Color(0x1AEF4444)
                 ),
@@ -429,16 +428,16 @@ fun PanicTab(
                 )
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = if (feedbackType == "success") Icons.Default.Info else Icons.Default.Warning,
                         contentDescription = "Status",
                         tint = if (feedbackType == "success") Color(0xFF86EFAC) else Color(0xFFFCA5A5),
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(22.dp)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
                             text = if (feedbackType == "success") "¡ALERTA ENVIADA!" else "Hubo un problema",
@@ -461,21 +460,21 @@ fun PanicTab(
         // Pulse and Panic Button
         Box(
             modifier = Modifier
-                .size(260.dp),
+                .size(210.dp),
             contentAlignment = Alignment.Center
         ) {
             // Pulse Waves
             if (!isLoading) {
                 Box(
                     modifier = Modifier
-                        .size(170.dp)
+                        .size(150.dp)
                         .scale(scalePulse1)
                         .alpha(alphaPulse1)
                         .background(Color(0x33EF4444), shape = CircleShape)
                 )
                 Box(
                     modifier = Modifier
-                        .size(170.dp)
+                        .size(150.dp)
                         .scale(scalePulse2)
                         .alpha(alphaPulse2)
                         .background(PrimaryPastel.copy(alpha = 0.15f), shape = CircleShape)
@@ -490,11 +489,11 @@ fun PanicTab(
                     }
                 },
                 modifier = Modifier
-                    .size(164.dp),
+                    .size(148.dp),
                 shape = CircleShape,
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFDC2626)),
-                border = BorderStroke(6.dp, BgDark),
-                elevation = CardDefaults.cardElevation(defaultElevation = 20.dp)
+                border = BorderStroke(5.dp, BgDark),
+                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -502,8 +501,8 @@ fun PanicTab(
                 ) {
                     if (isLoading) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(36.dp))
-                            Spacer(modifier = Modifier.height(8.dp))
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(32.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = "ENVIANDO...",
                                 color = Color.White,
@@ -517,12 +516,12 @@ fun PanicTab(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            Text("🚨", fontSize = 34.sp)
+                            Text("🚨", fontSize = 30.sp)
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "PÁNICO",
                                 color = Color.White,
-                                fontSize = 22.sp,
+                                fontSize = 20.sp,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 1.5.sp
                             )
@@ -532,17 +531,17 @@ fun PanicTab(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
         
         Text(
             text = "Presiona el botón rojo en caso de emergencias graves que requieran atención inmediata de serenazgo.",
             fontSize = 11.sp,
             color = Slate400,
             lineHeight = 15.sp,
-            modifier = Modifier.padding(horizontal = 24.dp)
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Secondary Button Card
         Card(
@@ -555,11 +554,11 @@ fun PanicTab(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Text("¿Deseas reportar otra incidencia?", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     Text("Robos, accidentes o vandalismo", color = Slate400, fontSize = 11.sp)
                 }
@@ -567,7 +566,8 @@ fun PanicTab(
                     onClick = onNavigateToDetailedReport,
                     colors = ButtonDefaults.buttonColors(containerColor = Primary.copy(alpha = 0.15f)),
                     border = BorderStroke(1.dp, Primary.copy(alpha = 0.3f)),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Text("Registrar", color = PrimaryPastel, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
