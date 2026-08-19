@@ -153,7 +153,14 @@ jobs:
             NODE_ENV=production
             CORS_ORIGIN=${{ secrets.CORS_ORIGIN || '*' }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            S3_BUCKET_MEDIA=${{ secrets.AWS_S3_MEDIA_BUCKET || 'seguridad-chaclacayo-media-6o7hw7' }}
+            AWS_REGION=${{ secrets.AWS_REGION || 'us-east-1' }}
+            CLOUDFRONT_MEDIA_URL=https://${{ secrets.CLOUDFRONT_DOMAIN_NAME || 'dgrbnac5o73d8.cloudfront.net' }}
             EOF
+
+            # Crear carpeta de persistencia local en host por seguridad
+            sudo mkdir -p /app/uploads
+            sudo chown -R 1000:1000 /app/uploads
 
             # Construir y reiniciar el contenedor Docker
             echo "🐳 Construyendo imagen Docker..."
@@ -168,6 +175,7 @@ jobs:
               --name seguridad-backend-container \
               --restart always \
               -p 3000:3000 \
+              -v /app/uploads:/app/uploads \
               --env-file .env \
               seguridad-backend:latest
 
@@ -208,22 +216,14 @@ jobs:
       - name: 🔨 Compilar APK Debug
         if: ${{ github.event_name == 'push' || inputs.apk_build_type == 'debug' || inputs.apk_build_type == '' }}
         run: |
-          BACKEND_HOST="${{ secrets.EC2_HOST }}"
-          if [ -n "$BACKEND_HOST" ]; then
-            ./gradlew assembleDebug -PBACKEND_URL="http://${BACKEND_HOST}:3000" --no-daemon
-          else
-            ./gradlew assembleDebug --no-daemon
-          fi
+          BACKEND_HOST="${{ secrets.CLOUDFRONT_DOMAIN_NAME || 'dgrbnac5o73d8.cloudfront.net' }}"
+          ./gradlew assembleDebug -PBACKEND_URL="https://${BACKEND_HOST}" --no-daemon
 
       - name: 🔨 Compilar APK Release
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apk_build_type == 'release' }}
         run: |
-          BACKEND_HOST="${{ secrets.EC2_HOST }}"
-          if [ -n "$BACKEND_HOST" ]; then
-            ./gradlew assembleRelease -PBACKEND_URL="http://${BACKEND_HOST}:3000" --no-daemon
-          else
-            ./gradlew assembleRelease --no-daemon
-          fi
+          BACKEND_HOST="${{ secrets.CLOUDFRONT_DOMAIN_NAME || 'dgrbnac5o73d8.cloudfront.net' }}"
+          ./gradlew assembleRelease -PBACKEND_URL="https://${BACKEND_HOST}" --no-daemon
 
       - name: 📤 Subir APK como Artifact Descargable
         uses: actions/upload-artifact@v4

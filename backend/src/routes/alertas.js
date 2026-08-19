@@ -6,24 +6,16 @@ const fs = require('fs');
 const { sequelize } = require('../config/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { alertCreationLimiter } = require('../middleware/rateLimiter');
+const { isS3Enabled, uploadBufferToS3, deleteFromS3 } = require('../config/s3');
 
-// Ensure uploads directory exists
+// Ensure local uploads directory exists for fallback
 const uploadsDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Multer Storage Configuration with sanitized filenames
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const cleanExt = path.extname(file.originalname).toLowerCase();
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `alert-${uniqueSuffix}${cleanExt}`);
-  }
-});
+// Multer in-memory storage for high performance and direct S3 upload
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage: storage,
@@ -37,7 +29,7 @@ const upload = multer({
     }
     cb(new Error('Solo se permiten archivos de imagen (jpeg, jpg, png, webp)'));
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
 // Helper for safe async file deletion
@@ -65,22 +57,39 @@ router.post('/', authMiddleware, alertCreationLimiter, upload.single('evidencia'
   const parsedDate = new Date(fecha_suceso);
 
   if (!tipo_incidencia || !tipo_incidencia.trim()) {
-    await safeUnlink(req.file?.path);
     return res.status(400).json({ message: 'El tipo de incidencia es obligatorio.' });
   }
 
   if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    await safeUnlink(req.file?.path);
     return res.status(400).json({ message: 'Las coordenadas GPS proporcionadas no son válidas.' });
   }
 
   if (isNaN(parsedDate.getTime())) {
-    await safeUnlink(req.file?.path);
     return res.status(400).json({ message: 'La fecha del suceso no tiene un formato válido.' });
   }
 
+  let evidenciaUrl = null;
+  let s3Key = null;
+  let localFilePath = null;
+
   try {
-    const evidenciaUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    // Process image upload if provided
+    if (req.file) {
+      const cleanExt = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const filename = `alert-${uniqueSuffix}${cleanExt}`;
+
+      if (isS3Enabled()) {
+        s3Key = `uploads/${filename}`;
+        await uploadBufferToS3(req.file.buffer, s3Key, req.file.mimetype);
+        evidenciaUrl = `/uploads/${filename}`;
+      } else {
+        // Fallback to local filesystem
+        localFilePath = path.join(uploadsDir, filename);
+        await fs.promises.writeFile(localFilePath, req.file.buffer);
+        evidenciaUrl = `/uploads/${filename}`;
+      }
+    }
 
     // Insert new alert using Raw SQL with bindings
     const [result] = await sequelize.query(
@@ -127,7 +136,12 @@ router.post('/', authMiddleware, alertCreationLimiter, upload.single('evidencia'
     res.status(201).json(alertWithUser);
   } catch (error) {
     console.error('Error creating alert:', error);
-    await safeUnlink(req.file?.path);
+    if (s3Key) {
+      await deleteFromS3(s3Key);
+    }
+    if (localFilePath) {
+      await safeUnlink(localFilePath);
+    }
     res.status(500).json({ message: 'Error interno del servidor al registrar alerta.' });
   }
 });

@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val backendUrl = project.findProperty("BACKEND_URL") as? String ?: "http://34.205.59.27:3000"
+val backendUrl = project.findProperty("BACKEND_URL") as? String ?: "https://dgrbnac5o73d8.cloudfront.net"
 
 android {
     namespace = "com.seguridad.chaclacayo"

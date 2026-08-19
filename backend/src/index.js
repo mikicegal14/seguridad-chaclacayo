@@ -61,8 +61,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Static folder for file uploads
-app.use('/uploads', express.static('uploads'));
+// Static folder for file uploads (with CloudFront redirect when S3 is active)
+app.use('/uploads', (req, res, next) => {
+  const cloudfrontMediaUrl = process.env.CLOUDFRONT_MEDIA_URL;
+  if (cloudfrontMediaUrl && process.env.S3_BUCKET_MEDIA) {
+    const cleanBase = cloudfrontMediaUrl.replace(/\/+$/, '');
+    const cleanPath = req.url.startsWith('/') ? req.url : `/${req.url}`;
+    return res.redirect(302, `${cleanBase}/uploads${cleanPath}`);
+  }
+  next();
+}, express.static('uploads'));
 
 // Routes
 app.use('/api/auth', authRoutes);

@@ -18,7 +18,9 @@ Para configurar los secretos, ve a tu repositorio en GitHub:
 | `AWS_SECRET_ACCESS_KEY` | Clave secreta IAM de AWS | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` |
 | `AWS_REGION` | Región de AWS (opcional, default `us-east-1`) | `us-east-1` |
 | `AWS_S3_BUCKET_NAME` | Nombre del bucket S3 del frontend | Output de Terraform (`s3_bucket_name`) |
+| `AWS_S3_MEDIA_BUCKET` | Nombre del bucket S3 de fotos / multimedia | Output de Terraform (`s3_media_bucket_name`) |
 | `CLOUDFRONT_DISTRIBUTION_ID` | ID de la distribución de CloudFront | `E1234567890ABC` |
+| `CLOUDFRONT_DOMAIN_NAME` | Dominio de CloudFront HTTPS | Output de Terraform (`cloudfront_domain_name`) |
 | `EC2_HOST` | IP Pública de la instancia EC2 | Output de Terraform (`ec2_public_ip`) |
 | `EC2_USER` | Usuario de la máquina EC2 | `ec2-user` |
 | `EC2_SSH_KEY` | Contenido de tu clave privada SSH (.pem) | `-----BEGIN RSA PRIVATE KEY----- ...` |

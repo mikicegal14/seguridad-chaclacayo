@@ -1,4 +1,4 @@
-# --- Frontend Outputs ---
+# --- Frontend & Media Outputs ---
 output "cloudfront_url" {
   description = "URL HTTPS pública provista por CloudFront para el Frontend"
   value       = "https://${aws_cloudfront_distribution.frontend_distribution.domain_name}"
@@ -12,6 +12,16 @@ output "cloudfront_domain_name" {
 output "s3_bucket_name" {
   description = "Nombre del bucket S3 para desplegar la compilación del frontend"
   value       = aws_s3_bucket.frontend.id
+}
+
+output "s3_media_bucket_name" {
+  description = "Nombre del bucket S3 para almacenamiento de evidencias multimedia"
+  value       = aws_s3_bucket.media.id
+}
+
+output "media_url" {
+  description = "URL base pública para acceder a las fotos/evidencias vía CloudFront HTTPS"
+  value       = "https://${aws_cloudfront_distribution.frontend_distribution.domain_name}/uploads"
 }
 
 output "s3_sync_command" {
@@ -62,6 +72,9 @@ output "suggested_backend_env" {
     DB_PASSWORD=${var.db_password}
     NODE_ENV=production
     CORS_ORIGIN=https://${aws_cloudfront_distribution.frontend_distribution.domain_name}
+    S3_BUCKET_MEDIA=${aws_s3_bucket.media.id}
+    AWS_REGION=${var.aws_region}
+    CLOUDFRONT_MEDIA_URL=https://${aws_cloudfront_distribution.frontend_distribution.domain_name}
   EOT
   sensitive   = true
 }

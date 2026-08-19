@@ -16,8 +16,8 @@ RUN npm ci --only=production
 # Copiar el código fuente
 COPY . .
 
-# Crear carpeta de uploads
-RUN mkdir -p uploads
+# Crear carpeta de uploads con permisos para el usuario node
+RUN mkdir -p uploads && chown -R node:node /app
 
 # Exponer el puerto del backend
 EXPOSE 3000

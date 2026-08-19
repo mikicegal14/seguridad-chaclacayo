@@ -14,7 +14,7 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
-# Rol IAM para permitir conexión mediante AWS Systems Manager (SSM) sin necesidad de SSH
+# Rol IAM para permitir conexión mediante AWS Systems Manager (SSM) y acceso a S3
 resource "aws_iam_role" "ec2_ssm_role" {
   name = "${var.project_name}-ec2-ssm-role"
 
@@ -35,6 +35,32 @@ resource "aws_iam_role" "ec2_ssm_role" {
 resource "aws_iam_role_policy_attachment" "ssm_core" {
   role       = aws_iam_role.ec2_ssm_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# Política IAM para permitir que el Backend en EC2 suba y gestione fotos en el bucket S3 Multimedia
+resource "aws_iam_role_policy" "ec2_s3_media_policy" {
+  name = "${var.project_name}-ec2-s3-media-policy"
+  role = aws_iam_role.ec2_ssm_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowS3MediaBucketAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.media.arn,
+          "${aws_s3_bucket.media.arn}/*"
+        ]
+      }
+    ]
+  })
 }
 
 resource "aws_iam_instance_profile" "ec2_profile" {
@@ -67,6 +93,11 @@ resource "aws_instance" "backend" {
     volume_size           = 20
     volume_type           = "gp3"
     delete_on_termination = true
+  }
+
+  # Ignorar cambios automáticos de AMI para no recrear la instancia en cada apply
+  lifecycle {
+    ignore_changes = [ami]
   }
 
   # Script de inicialización automático (User Data)
