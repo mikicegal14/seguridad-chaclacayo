@@ -1,8 +1,8 @@
 # 🚨 Seguridad Chaclacayo - Sistema de Gestión de Alertas en Tiempo Real
 
 [![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](.github/workflows/deploy.yml)
-[![Frontend](https://img.shields.io/badge/Frontend-Angular%2021%20%7C%20TailwindCSS-DD0031?logo=angular&logoColor=white)](frontend/)
-[![Backend](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express%20%7C%20Socket.IO-339933?logo=node.js&logoColor=white)](backend/)
+[![Frontend](https://img.shields.io/badge/Frontend-Angular%2022%20%7C%20TailwindCSS-DD0031?logo=angular&logoColor=white)](frontend/)
+[![Backend](https://img.shields.io/badge/Backend-Node.js%2022%20LTS%20%7C%20Express%205%20%7C%20Socket.IO-339933?logo=node.js&logoColor=white)](backend/)
 [![Mobile](https://img.shields.io/badge/Android-Kotlin%20%7C%20Jetpack%20Compose-3DDC84?logo=android&logoColor=white)](citizen-android/)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL%2015-4169E1?logo=postgresql&logoColor=white)](docker-compose.yml)
 [![Infraestructura](https://img.shields.io/badge/IaC-Terraform%20%7C%20AWS-7B42BC?logo=terraform&logoColor=white)](terraform/)
@@ -51,9 +51,9 @@ El sistema **Seguridad Chaclacayo** conecta a los ciudadanos directamente con el
 ```mermaid
 flowchart TD
     subgraph Clientes["📱 Clientes"]
-        CitizenPWA["🌐 Ciudadano (PWA / Web)\nAngular 21 + Tailwind"]
+        CitizenPWA["🌐 Ciudadano (PWA / Web)\nAngular 22 + Tailwind"]
         CitizenAndroid["🤖 Ciudadano (Android App & Widget)\nKotlin + Jetpack Compose"]
-        AdminWeb["🖥️ Operador / Admin\nAngular 21 + Leaflet Maps"]
+        AdminWeb["🖥️ Operador / Admin\nAngular 22 + Leaflet Maps"]
     end
 
     subgraph AWS["☁️ Infraestructura AWS (Terraform)"]
@@ -85,7 +85,7 @@ flowchart TD
 ## 🧩 Componentes y Ecosistema
 
 ### 1. Backend API & WebSockets
-- **Tecnologías:** Node.js, Express, Socket.IO, Sequelize ORM, PostgreSQL.
+- **Tecnologías:** Node.js 22 LTS, Express 5, Socket.IO, Sequelize ORM, PostgreSQL.
 - **Seguridad:** JWT (JSON Web Tokens), Bcrypt, Helmet, Express Rate Limit, CORS configurado.
 - **Características:**
   - Emisión de eventos `nueva_alerta` en tiempo real hacia salas de operadores.
@@ -94,7 +94,7 @@ flowchart TD
   - Script de seed para poblar datos iniciales y usuarios de prueba.
 
 ### 2. Frontend Web & PWA (Angular)
-- **Tecnologías:** Angular 21, TypeScript, Tailwind CSS, Leaflet, Socket.IO Client, `@angular/pwa`.
+- **Tecnologías:** Angular 22, TypeScript, Tailwind CSS, Leaflet, Socket.IO Client, `@angular/pwa`.
 - **Características:**
   - **Módulo Ciudadano (PWA):** Botón de pánico interactivo, geolocalización HTML5, formulario de reporte con soporte de cámara/galería e instalación offline.
   - **Módulo Operador / Administrador:** Tabla reactiva de alertas, filtros, modal con mapa interactivo Leaflet (OpenStreetMap gratuito), vista de detalles de evidencia y gestión de operadores/ciudadanos.
