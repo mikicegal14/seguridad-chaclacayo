@@ -158,10 +158,9 @@ export class AdminMonitorComponent implements OnInit, OnDestroy {
         fadeAnimation: true
       }).setView([lat, lng], 15);
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '© OpenStreetMap contributors © CARTO'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(this.mapInstance);
 
       this.mapInstance.invalidateSize();
