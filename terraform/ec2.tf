@@ -95,6 +95,14 @@ resource "aws_instance" "backend" {
     delete_on_termination = true
   }
 
+  # Configuración de metadatos IMDS para permitir que Docker asuma el rol IAM sin credenciales estáticas
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "optional"
+    http_put_response_hop_limit = 2 # Requerido para contenedores Docker (hop adicional de red)
+    instance_metadata_tags      = "enabled"
+  }
+
   # Ignorar cambios automáticos de AMI para no recrear la instancia en cada apply
   lifecycle {
     ignore_changes = [ami]

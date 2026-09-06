@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const jwt = require('jsonwebtoken');
 const { connectDB } = require('./config/db');
 const { initDatabase } = require('./config/initDb');
+const { verifyS3Connection } = require('./config/s3');
 const authRoutes = require('./routes/auth');
 const alertasRoutes = require('./routes/alertas');
 const operadoresRoutes = require('./routes/operadores');
@@ -138,6 +139,9 @@ const startServer = async () => {
   
   // Check/create tables
   await initDatabase();
+
+  // Verify cloud storage connectivity
+  await verifyS3Connection();
 
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

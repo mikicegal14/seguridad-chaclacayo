@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
 const fs = require('fs');
 const path = require('path');
 
@@ -22,7 +22,12 @@ if (bucketName) {
   s3Client = new S3Client(clientConfig);
   console.log(`[S3 Storage] Configured S3 Media storage for bucket: ${bucketName} (region: ${region})`);
 } else {
-  console.log('[S3 Storage] S3_BUCKET_MEDIA not defined. Using local disk storage fallback (/uploads).');
+  if (process.env.NODE_ENV === 'production') {
+    console.error('⚠️ [S3 Storage ALERTA CRÍTICA] S3_BUCKET_MEDIA no está configurado en ambiente de PRODUCCIÓN.');
+    console.error('⚠️ Las fotos de alertas se guardarán en el disco efímero local (/uploads) y NO serán accesibles por CloudFront.');
+  } else {
+    console.log('[S3 Storage] S3_BUCKET_MEDIA not defined. Using local disk storage fallback (/uploads).');
+  }
 }
 
 /**
@@ -74,10 +79,36 @@ const deleteFromS3 = async (key) => {
   }
 };
 
+/**
+ * Verify S3 bucket accessibility and permissions
+ */
+const verifyS3Connection = async () => {
+  if (!isS3Enabled()) {
+    if (process.env.NODE_ENV === 'production') {
+      const msg = 'S3_BUCKET_MEDIA no está configurado en producción.';
+      console.error(`⚠️ [S3 Storage ERROR] ${msg}`);
+      return { ok: false, error: msg };
+    }
+    return { ok: true, message: 'Almacenamiento local activo (desarrollo).' };
+  }
+
+  try {
+    const command = new HeadBucketCommand({ Bucket: bucketName });
+    await s3Client.send(command);
+    console.log(`✅ [S3 Storage] Verificación exitosa: El bucket '${bucketName}' es accesible y está activo en la región '${region}'.`);
+    return { ok: true, bucket: bucketName, region };
+  } catch (error) {
+    console.error(`❌ [S3 Storage ERROR] Fallo al verificar el bucket '${bucketName}':`, error.message);
+    return { ok: false, error: error.message };
+  }
+};
+
 module.exports = {
   s3Client,
   isS3Enabled,
   uploadBufferToS3,
   deleteFromS3,
-  bucketName
+  verifyS3Connection,
+  bucketName,
+  region
 };

@@ -98,7 +98,13 @@ DB_PASSWORD=<TU_PASSWORD>
 NODE_ENV=production
 CORS_ORIGIN=https://<CLOUDFRONT_DOMAIN>
 JWT_SECRET=un_secreto_muy_seguro_para_jwt
+S3_BUCKET_MEDIA=<S3_MEDIA_BUCKET_NAME>
+AWS_REGION=us-east-1
+CLOUDFRONT_MEDIA_URL=https://<CLOUDFRONT_DOMAIN>
 EOT
+
+# Verificar conectividad y permisos con Amazon S3 antes de iniciar
+npm run test:s3
 
 # Ejecutar con Docker o PM2/Node
 docker build -t backend-app .

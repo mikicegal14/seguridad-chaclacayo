@@ -6,7 +6,7 @@ const fs = require('fs');
 const { sequelize } = require('../config/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { alertCreationLimiter } = require('../middleware/rateLimiter');
-const { isS3Enabled, uploadBufferToS3, deleteFromS3 } = require('../config/s3');
+const { isS3Enabled, uploadBufferToS3, deleteFromS3, verifyS3Connection, bucketName, region } = require('../config/s3');
 
 // Ensure local uploads directory exists for fallback
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -166,6 +166,20 @@ router.get('/', authMiddleware, requireRole(['admin']), async (req, res) => {
     console.error('Error fetching alerts:', error);
     res.status(500).json({ message: 'Error interno del servidor al consultar alertas.' });
   }
+});
+
+// @route   GET /api/alertas/storage-status
+// @desc    Check S3 storage health and configuration
+// @access  Private (Admin only)
+router.get('/storage-status', authMiddleware, requireRole(['admin']), async (req, res) => {
+  const status = await verifyS3Connection();
+  res.json({
+    s3Enabled: isS3Enabled(),
+    bucket: bucketName || null,
+    region: region || null,
+    environment: process.env.NODE_ENV || 'development',
+    status
+  });
 });
 
 // @route   GET /api/alertas/mis-reportes
