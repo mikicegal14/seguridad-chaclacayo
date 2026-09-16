@@ -25,6 +25,7 @@ export const routes: Routes = [
     path: 'admin', 
     loadComponent: () => import('./admin/dashboard').then(m => m.AdminDashboardComponent),
     canActivate: [authGuard, roleGuard(['admin'])],
+    canActivateChild: [roleGuard(['admin'])],
     children: [
       { path: '', redirectTo: 'monitor', pathMatch: 'full' },
       { 
@@ -51,6 +52,7 @@ export const routes: Routes = [
     path: 'citizen', 
     loadComponent: () => import('./citizen/dashboard').then(m => m.CitizenDashboardComponent),
     canActivate: [authGuard, roleGuard(['citizen'])],
+    canActivateChild: [roleGuard(['citizen'])],
     children: [
       { path: '', redirectTo: 'panic', pathMatch: 'full' },
       { 

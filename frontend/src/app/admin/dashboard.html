@@ -71,33 +71,4 @@
   <main class="flex-grow p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
     <router-outlet></router-outlet>
   </main>
-
-  <!-- Global Toast Notification -->
-  @if (toastService.message()) {
-    <aside 
-      aria-live="polite" 
-      aria-atomic="true"
-      class="fixed bottom-6 right-6 z-50 animate-bounce transition duration-300"
-    >
-      <div 
-        [class]="
-          toastService.type() === 'success' 
-            ? 'bg-card-dark border-green-500/40 text-green-300 shadow-green-950/40' 
-            : 'bg-card-dark border-red-500/40 text-red-300 shadow-red-950/40'
-        "
-        class="border shadow-2xl px-5 py-3.5 rounded-2xl flex items-center gap-3 max-w-md text-xs font-semibold backdrop-blur-md"
-      >
-        @if (toastService.type() === 'success') {
-          <svg class="h-5 w-5 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        } @else {
-          <svg class="h-5 w-5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        }
-        <span>{{ toastService.message() }}</span>
-      </div>
-    </aside>
-  }
 </div>
