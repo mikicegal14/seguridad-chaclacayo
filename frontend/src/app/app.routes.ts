@@ -16,33 +16,51 @@ export const routes: Routes = [
     loadComponent: () => import('./auth/admin-login/admin-login').then(m => m.AdminLoginComponent) 
   },
   { 
+    path: 'auth/colaborador-login', 
+    loadComponent: () => import('./auth/colaborador-login/colaborador-login').then(m => m.ColaboradorLoginComponent) 
+  },
+  { path: 'auth/colaborador', redirectTo: 'auth/colaborador-login', pathMatch: 'full' },
+  { 
     path: 'auth/register', 
     loadComponent: () => import('./auth/register/register').then(m => m.RegisterComponent) 
   },
 
-  // Protected Admin route with child routes (lazy loaded)
+  // Protected Admin/Colaborador route with child routes (lazy loaded)
   { 
     path: 'admin', 
     loadComponent: () => import('./admin/dashboard').then(m => m.AdminDashboardComponent),
-    canActivate: [authGuard, roleGuard(['admin'])],
-    canActivateChild: [roleGuard(['admin'])],
+    canActivate: [authGuard, roleGuard(['admin', 'colaborador'])],
     children: [
       { path: '', redirectTo: 'monitor', pathMatch: 'full' },
       { 
         path: 'monitor', 
-        loadComponent: () => import('./admin/monitor/admin-monitor').then(m => m.AdminMonitorComponent) 
+        loadComponent: () => import('./admin/monitor/admin-monitor').then(m => m.AdminMonitorComponent),
+        canActivate: [roleGuard(['admin', 'colaborador'])]
       },
       { 
         path: 'heatmap', 
-        loadComponent: () => import('./admin/heatmap/admin-heatmap').then(m => m.AdminHeatmapComponent) 
+        loadComponent: () => import('./admin/heatmap/admin-heatmap').then(m => m.AdminHeatmapComponent),
+        canActivate: [roleGuard(['admin', 'colaborador'])]
       },
       { 
         path: 'operators', 
-        loadComponent: () => import('./admin/operators/admin-operators').then(m => m.AdminOperatorsComponent) 
+        loadComponent: () => import('./admin/operators/admin-operators').then(m => m.AdminOperatorsComponent),
+        canActivate: [roleGuard(['admin'])]
       },
       { 
         path: 'citizens', 
-        loadComponent: () => import('./admin/citizens/admin-citizens').then(m => m.AdminCitizensComponent) 
+        loadComponent: () => import('./admin/citizens/admin-citizens').then(m => m.AdminCitizensComponent),
+        canActivate: [roleGuard(['admin'])]
+      },
+      { 
+        path: 'configuracion', 
+        loadComponent: () => import('./admin/configuracion/admin-configuracion').then(m => m.AdminConfiguracionComponent),
+        canActivate: [roleGuard(['admin'])]
+      },
+      { 
+        path: 'auditoria', 
+        loadComponent: () => import('./admin/auditoria/admin-auditoria').then(m => m.AdminAuditoriaComponent),
+        canActivate: [roleGuard(['admin'])]
       }
     ]
   },

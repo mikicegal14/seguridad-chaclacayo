@@ -107,6 +107,20 @@ export class SocketService {
     });
   }
 
+  onAlertActaUpdated(): Observable<Alert> {
+    return new Observable<Alert>((observer) => {
+      const handler = (alert: Alert) => {
+        observer.next(alert);
+      };
+
+      this.socket.on('alerta_acta_actualizada', handler);
+
+      return () => {
+        this.socket.off('alerta_acta_actualizada', handler);
+      };
+    });
+  }
+
   disconnect() {
     this.isOperatorsJoined = false;
     this.currentJoinedUserId = null;

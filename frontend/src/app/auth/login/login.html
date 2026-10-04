@@ -60,12 +60,13 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-between">
-        <div class="text-sm">
-          <a routerLink="/auth/admin-login" class="font-medium text-secondary-pastel hover:text-secondary transition py-1 inline-block">
-            ¿Eres operador del Centro de Monitoreo? Ingresa aquí
-          </a>
-        </div>
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+        <a routerLink="/auth/admin-login" class="font-medium text-secondary-pastel hover:text-secondary transition py-1">
+          ¿Operador del Centro? Ingresa aquí
+        </a>
+        <a routerLink="/auth/colaborador-login" class="font-medium text-emerald-400 hover:text-emerald-300 transition py-1">
+          🛡️ Puestos / Colaborador OTP
+        </a>
       </div>
 
       <div>

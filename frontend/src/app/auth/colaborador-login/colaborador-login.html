@@ -1,0 +1,106 @@
+<main class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-bg-dark relative overflow-hidden font-sans">
+  <!-- Subtle Gradient Accent Glow (Emerald/Cyan tone for field collaborators) -->
+  <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
+  <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
+
+  <div class="max-w-md w-full space-y-7 p-8 bg-card-dark border border-border-dark rounded-2xl shadow-2xl relative z-10 backdrop-blur-sm">
+    <header class="text-center">
+      <!-- Icon Badge -->
+      <div class="mx-auto h-16 w-16 bg-gradient-to-tr from-emerald-600 to-teal-400 rounded-2xl flex items-center justify-center shadow-lg border border-emerald-500/20" aria-hidden="true">
+        <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+        </svg>
+      </div>
+      <h1 class="mt-5 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Acceso Colaborador</h1>
+      <p class="mt-2 text-xs sm:text-sm text-slate-400">
+        Puestos de Vigilancia, Garitas y Unidades Móviles
+      </p>
+    </header>
+
+    @if (errorMessage()) {
+      <div role="alert" class="bg-red-500/10 border border-red-500/20 text-red-200 text-xs sm:text-sm p-4 rounded-xl flex items-start space-x-2.5">
+        <svg class="h-5 w-5 text-red-400 shrink-0 mt-0.5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <form class="space-y-5" (submit)="onSubmit($event)">
+      <div class="space-y-4">
+        <!-- Input: Seudónimo / Máquina -->
+        <div>
+          <label for="colab-seudonimo" class="block text-xs sm:text-sm font-semibold text-slate-300">
+            Seudónimo / Identificador de Máquina o Puesto
+          </label>
+          <input
+            id="colab-seudonimo"
+            name="seudonimo"
+            type="text"
+            required
+            maxlength="50"
+            [(ngModel)]="seudonimo"
+            class="mt-1.5 block w-full px-4 py-3 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition text-sm"
+            placeholder="Ej: Garita Norte, Móvil 03, Tablet Garita Central"
+          />
+          <p class="mt-1 text-[11px] text-slate-400">
+            Este nombre identificará a esta máquina como <strong class="text-slate-300">responsable</strong> en las actas y auditoría.
+          </p>
+        </div>
+
+        <!-- Input: OTP (6 dígitos) -->
+        <div>
+          <label for="colab-otp" class="block text-xs sm:text-sm font-semibold text-slate-300">
+            Código de Seguridad OTP (6 dígitos)
+          </label>
+          <div class="relative mt-1.5">
+            <input
+              id="colab-otp"
+              name="otp"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="6"
+              required
+              [(ngModel)]="otp"
+              class="block w-full px-4 py-3 bg-bg-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition text-center tracking-[0.3em] font-mono text-lg font-bold"
+              placeholder="••••••"
+            />
+          </div>
+          <p class="mt-1 text-[11px] text-slate-400">
+            Solicite el código temporal de 30 segundos al <strong class="text-slate-300">Administrador</strong> en el Centro de Control.
+          </p>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="pt-2">
+        <button
+          type="submit"
+          [disabled]="isLoading()"
+          class="w-full min-h-[46px] flex items-center justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg cursor-pointer"
+        >
+          @if (isLoading()) {
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" aria-hidden="true" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Validando OTP...
+          } @else {
+            Ingresar como Colaborador
+          }
+        </button>
+      </div>
+
+      <!-- Links to Citizen and Admin login -->
+      <div class="pt-2 border-t border-border-dark flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+        <a routerLink="/auth/admin-login" class="hover:text-primary-pastel transition py-1">
+          ⚙️ Acceso Administrador
+        </a>
+        <a routerLink="/auth/login" class="hover:text-secondary-pastel transition py-1">
+          🏠 Acceso Vecinos (Ciudadano)
+        </a>
+      </div>
+    </form>
+  </div>
+</main>

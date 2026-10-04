@@ -2,7 +2,8 @@ export interface User {
   id: number;
   dni: string;
   nombre: string;
-  rol: 'admin' | 'citizen';
+  rol: 'admin' | 'citizen' | 'colaborador';
+  seudonimo?: string;
   email_telefono?: string;
   created_at?: string;
   updated_at?: string;

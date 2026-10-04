@@ -20,6 +20,8 @@ export class AuthService {
   currentUser = computed(() => this.currentUserSignal());
   isLoggedIn = computed(() => this.currentUserSignal() !== null);
   isAdmin = computed(() => this.currentUserSignal()?.rol === 'admin');
+  isColaborador = computed(() => this.currentUserSignal()?.rol === 'colaborador');
+  canAccessMonitor = computed(() => ['admin', 'colaborador'].includes(this.currentUserSignal()?.rol || ''));
 
   constructor(private http: HttpClient, private router: Router) {
     this.loadSession();
@@ -98,6 +100,22 @@ export class AuthService {
       email_telefono
     }).pipe(
       timeout(HTTP_TIMEOUT_MS)
+    );
+  }
+
+  colaboradorLogin(seudonimo: string, otp: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/colaborador-login`, {
+      seudonimo,
+      otp
+    }).pipe(
+      timeout(HTTP_TIMEOUT_MS),
+      tap(response => {
+        if (response.token && response.user) {
+          localStorage.setItem('token', response.token);
+          localStorage.setItem('user', JSON.stringify(response.user));
+          this.currentUserSignal.set(response.user);
+        }
+      })
     );
   }
 

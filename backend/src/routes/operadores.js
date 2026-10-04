@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { sequelize } = require('../config/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const { logAuditEvent } = require('../utils/audit');
 
 // All operator management endpoints require valid JWT and admin role
 router.use(authMiddleware, requireRole(['admin']));
@@ -119,6 +120,15 @@ router.post('/', async (req, res) => {
     );
 
     const newOperator = result[0];
+
+    await logAuditEvent({
+      responsable: req.user.nombre || req.user.dni,
+      rol: req.user.rol,
+      accion: 'CREAR_OPERADOR',
+      modulo: 'OPERADORES',
+      detalles: { nuevo_operador_id: newOperator.id, nombre: newOperator.nombre, dni: newOperator.dni },
+      req
+    });
 
     res.status(201).json({
       message: 'Operador registrado exitosamente.',
@@ -261,6 +271,15 @@ router.delete('/:id', async (req, res) => {
         type: sequelize.QueryTypes.DELETE
       }
     );
+
+    await logAuditEvent({
+      responsable: req.user.nombre || req.user.dni,
+      rol: req.user.rol,
+      accion: 'ELIMINAR_OPERADOR',
+      modulo: 'OPERADORES',
+      detalles: { operador_id: operatorId, nombre_operador: operator.nombre },
+      req
+    });
 
     res.json({ 
       message: `El operador "${operator.nombre}" ha sido eliminado exitosamente del sistema.`,

@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const { sequelize } = require('../config/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimiter');
+const { verifyOtp } = require('../utils/totp');
+const { logAuditEvent } = require('../utils/audit');
 require('dotenv').config();
 
 // Helper to generate JWT
@@ -139,6 +141,18 @@ router.post('/login', authLimiter, async (req, res) => {
     // Generate JWT
     const token = generateToken(user);
 
+    // Audit log for administrative logins
+    if (user.rol === 'admin') {
+      await logAuditEvent({
+        responsable: user.nombre,
+        rol: user.rol,
+        accion: 'LOGIN_ADMIN',
+        modulo: 'AUTH',
+        detalles: { dni: user.dni, identifier: loginIdentifier },
+        req
+      });
+    }
+
     res.json({
       token,
       user: {
@@ -228,10 +242,98 @@ router.post('/register-admin', authMiddleware, requireRole(['admin']), async (re
   }
 });
 
+// @route   POST /api/auth/colaborador-login
+// @desc    Authenticate machine/kiosk as collaborator using rolling 30s OTP and pseudonym
+// @access  Public
+router.post('/colaborador-login', authLimiter, async (req, res) => {
+  let { seudonimo, otp } = req.body;
+  seudonimo = (seudonimo || '').trim();
+  otp = (otp || '').trim();
+
+  if (!seudonimo || seudonimo.length < 3) {
+    return res.status(400).json({ 
+      message: 'Debe ingresar un seudónimo o identificador de máquina válido (mínimo 3 caracteres).' 
+    });
+  }
+
+  if (seudonimo.length > 50) {
+    return res.status(400).json({ 
+      message: 'El seudónimo no puede superar los 50 caracteres.' 
+    });
+  }
+
+  if (!otp) {
+    return res.status(400).json({ 
+      message: 'Debe ingresar el código OTP de 6 dígitos brindado por el Administrador.' 
+    });
+  }
+
+  // Validate dynamic TOTP
+  const isValid = verifyOtp(otp);
+  if (!isValid) {
+    return res.status(400).json({ 
+      message: 'El código OTP es inválido o ha expirado. Solicite el código vigente de 30 segundos en la sección Configuración del Administrador.' 
+    });
+  }
+
+  try {
+    // Audit logging for collaborator login
+    await logAuditEvent({
+      responsable: seudonimo,
+      rol: 'colaborador',
+      accion: 'LOGIN_COLABORADOR',
+      modulo: 'AUTH',
+      detalles: {
+        seudonimo,
+        userAgent: req.headers['user-agent']
+      },
+      req
+    });
+
+    // Generate token strictly with role 'colaborador' and pseudonym
+    const token = jwt.sign(
+      {
+        id: 0,
+        dni: 'COLABORADOR',
+        rol: 'colaborador', // STRICT: always collaborator
+        nombre: seudonimo,
+        seudonimo: seudonimo
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '12h' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: 0,
+        dni: 'COLABORADOR',
+        nombre: seudonimo,
+        seudonimo: seudonimo,
+        rol: 'colaborador'
+      }
+    });
+  } catch (error) {
+    console.error('Error in colaborador login:', error);
+    res.status(500).json({ message: 'Error interno del servidor al autenticar colaborador.' });
+  }
+});
+
 // @route   GET /api/auth/me
 // @desc    Get current user details from token
 // @access  Private
 router.get('/me', authMiddleware, async (req, res) => {
+  // If collaborator session, resolve directly from token claims
+  if (req.user.rol === 'colaborador') {
+    return res.json({
+      id: 0,
+      dni: 'COLABORADOR',
+      nombre: req.user.nombre || req.user.seudonimo || 'Colaborador',
+      seudonimo: req.user.seudonimo || req.user.nombre || 'Colaborador',
+      rol: 'colaborador'
+    });
+  }
+
   try {
     const users = await sequelize.query(
       'SELECT id, dni, nombre, rol, email_telefono FROM usuarios WHERE id = :id LIMIT 1',
