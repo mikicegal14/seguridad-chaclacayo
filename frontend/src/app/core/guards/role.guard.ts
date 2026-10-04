@@ -22,8 +22,8 @@ export const roleGuard = (allowedRoles: string[]): CanActivateFn => {
         5000
       );
 
-      if (user.rol === 'admin' || user.rol === 'colaborador') {
-        router.navigate(['/admin/monitor']);
+      if (user.rol === 'admin') {
+        router.navigate(['/admin']);
       } else {
         router.navigate(['/citizen']);
       }

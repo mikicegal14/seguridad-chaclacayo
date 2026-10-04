@@ -22,7 +22,6 @@ tmp/
 uploads/
 */uploads/
 *.log
-backups/
 
 # Terraform
 .terraform/

@@ -5,7 +5,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AlertService } from '../../core/services/alert.service';
 import { SocketService } from '../../core/services/socket.service';
 import { ToastService } from '../../core/services/toast.service';
-import { AuthService } from '../../core/services/auth.service';
 import { Alert } from '../../core/models/alert.model';
 import { environment } from '../../../environments/environment';
 import * as L from 'leaflet';
@@ -36,15 +35,7 @@ export class AdminMonitorComponent implements OnInit, OnDestroy {
   // Modal states
   showDetailsModal = signal(false);
   showMapModal = signal(false);
-  showActaModal = signal(false);
   selectedAlert = signal<Alert | null>(null);
-  actaAlert = signal<Alert | null>(null);
-
-  // Acta form signals
-  actaTexto = signal('');
-  actaUnidad = signal('');
-  actaEstado = signal('Atendido');
-  isSavingActa = signal(false);
 
   private mapInstance: L.Map | null = null;
   private mapTimeoutId: any = null;
@@ -52,15 +43,13 @@ export class AdminMonitorComponent implements OnInit, OnDestroy {
   constructor(
     private alertService: AlertService,
     private socketService: SocketService,
-    private toastService: ToastService,
-    public authService: AuthService
+    private toastService: ToastService
   ) {}
 
   @HostListener('document:keydown.escape')
   onEscapePress() {
     if (this.showDetailsModal()) this.closeDetailsModal();
     if (this.showMapModal()) this.closeMapModal();
-    if (this.showActaModal()) this.closeActaModal();
   }
 
   ngOnInit() {
@@ -82,18 +71,6 @@ export class AdminMonitorComponent implements OnInit, OnDestroy {
         const currentSelected = this.selectedAlert();
         if (currentSelected && currentSelected.id === data.id) {
           this.selectedAlert.set({ ...currentSelected, estado: data.estado });
-        }
-      });
-
-    this.socketService.onAlertActaUpdated()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((updatedAlert) => {
-        this.alerts.update(currentAlerts =>
-          currentAlerts.map(a => a.id === updatedAlert.id ? { ...a, ...updatedAlert } : a)
-        );
-        const currentSelected = this.selectedAlert();
-        if (currentSelected && currentSelected.id === updatedAlert.id) {
-          this.selectedAlert.set({ ...currentSelected, ...updatedAlert });
         }
       });
   }
@@ -152,76 +129,6 @@ export class AdminMonitorComponent implements OnInit, OnDestroy {
 
   closeDetailsModal() {
     this.showDetailsModal.set(false);
-  }
-
-  abrirActaDesdeDetalles() {
-    const alert = this.selectedAlert();
-    this.closeDetailsModal();
-    if (alert) {
-      this.abrirActa(alert);
-    }
-  }
-
-  abrirActa(alert: Alert) {
-    this.actaAlert.set(alert);
-    this.actaTexto.set(alert.acta_intervencion || '');
-    this.actaUnidad.set(alert.unidad_intervencion || '');
-    this.actaEstado.set(alert.estado || 'Atendido');
-    this.showActaModal.set(true);
-  }
-
-  closeActaModal() {
-    this.showActaModal.set(false);
-    this.actaAlert.set(null);
-  }
-
-  guardarActa() {
-    const alert = this.actaAlert();
-    if (!alert) return;
-
-    const texto = (this.actaTexto() || '').trim();
-    if (!texto) {
-      this.toastService.show('El contenido del informe del acta es obligatorio.', 'error');
-      return;
-    }
-
-    this.isSavingActa.set(true);
-
-    this.alertService.llenarActa(alert.id, {
-      acta_intervencion: texto,
-      unidad_intervencion: (this.actaUnidad() || '').trim(),
-      estado: this.actaEstado()
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.isSavingActa.set(false);
-          const updated = res.alert || {
-            ...alert,
-            acta_intervencion: texto,
-            unidad_intervencion: this.actaUnidad(),
-            estado: this.actaEstado(),
-            responsable_acta: this.authService.currentUser()?.seudonimo || this.authService.currentUser()?.nombre,
-            fecha_acta: new Date().toISOString()
-          };
-
-          this.alerts.update(current =>
-            current.map(a => a.id === updated.id ? { ...a, ...updated } : a)
-          );
-
-          const sel = this.selectedAlert();
-          if (sel && sel.id === updated.id) {
-            this.selectedAlert.set({ ...sel, ...updated });
-          }
-
-          this.toastService.show('Acta de intervención guardada con éxito.', 'success');
-          this.closeActaModal();
-        },
-        error: (err) => {
-          this.isSavingActa.set(false);
-          this.toastService.show(err.error?.message || 'Error al guardar el acta.', 'error');
-        }
-      });
   }
 
   verMapa(alert: Alert) {

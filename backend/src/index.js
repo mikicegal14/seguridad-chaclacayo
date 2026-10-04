@@ -11,7 +11,6 @@ const authRoutes = require('./routes/auth');
 const alertasRoutes = require('./routes/alertas');
 const operadoresRoutes = require('./routes/operadores');
 const usuariosRoutes = require('./routes/usuarios');
-const configuracionRoutes = require('./routes/configuracion');
 const { generalApiLimiter } = require('./middleware/rateLimiter');
 require('dotenv').config();
 
@@ -79,7 +78,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/alertas', alertasRoutes);
 app.use('/api/operadores', operadoresRoutes);
 app.use('/api/usuarios', usuariosRoutes);
-app.use('/api/configuracion', configuracionRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -100,14 +98,14 @@ app.use((err, req, res, next) => {
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id} (User: ${socket.user ? `${socket.user.nombre} [${socket.user.rol}]` : 'Anonymous'})`);
   
-  // Operators room: for verified administrators and collaborators
+  // Operators room: ONLY for verified administrators
   socket.on('join_operators', () => {
-    if (!socket.user || (socket.user.rol !== 'admin' && socket.user.rol !== 'colaborador')) {
+    if (!socket.user || socket.user.rol !== 'admin') {
       console.warn(`Unauthorized attempt to join 'operators' room by socket ${socket.id}`);
       return socket.emit('error_auth', { message: 'No autorizado para unirse a la sala de operadores.' });
     }
     socket.join('operators');
-    console.log(`${socket.user.rol === 'admin' ? 'Admin' : 'Colaborador'} ${socket.user.nombre} (${socket.id}) joined operators room`);
+    console.log(`Admin ${socket.user.nombre} (${socket.id}) joined operators room`);
   });
 
   // Citizen personal room: ONLY for the verified user or admin

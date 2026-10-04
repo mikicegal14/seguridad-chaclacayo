@@ -6,7 +6,6 @@ const fs = require('fs');
 const { sequelize } = require('../config/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { alertCreationLimiter } = require('../middleware/rateLimiter');
-const { logAuditEvent } = require('../utils/audit');
 const { isS3Enabled, uploadBufferToS3, deleteFromS3, verifyS3Connection, bucketName, region } = require('../config/s3');
 
 // Ensure local uploads directory exists for fallback
@@ -149,8 +148,8 @@ router.post('/', authMiddleware, alertCreationLimiter, upload.single('evidencia'
 
 // @route   GET /api/alertas
 // @desc    Get all alerts (ordered by date descending)
-// @access  Private (Admin or Colaborador)
-router.get('/', authMiddleware, requireRole(['admin', 'colaborador']), async (req, res) => {
+// @access  Private (Admin only)
+router.get('/', authMiddleware, requireRole(['admin']), async (req, res) => {
   try {
     const alerts = await sequelize.query(
       `SELECT a.*, u.nombre as usuario_nombre, u.dni as usuario_dni 
@@ -210,8 +209,8 @@ router.get('/mis-reportes', authMiddleware, async (req, res) => {
 
 // @route   PATCH /api/alertas/:id/estado
 // @desc    Update alert status
-// @access  Private (Admin or Colaborador)
-router.patch('/:id/estado', authMiddleware, requireRole(['admin', 'colaborador']), async (req, res) => {
+// @access  Private (Admin only)
+router.patch('/:id/estado', authMiddleware, requireRole(['admin']), async (req, res) => {
   const alertId = parseInt(req.params.id, 10);
   const { estado } = req.body;
   const validEstados = ['Atendido', 'En camino', 'Falsa Alarma', 'Cancelado', 'Aun no atendido'];
@@ -227,50 +226,27 @@ router.patch('/:id/estado', authMiddleware, requireRole(['admin', 'colaborador']
   }
 
   try {
-    // Get current alert state for audit trail
-    const [currentAlert] = await sequelize.query(
-      'SELECT id, estado, user_id FROM alertas WHERE id = :id LIMIT 1',
-      { replacements: { id: alertId }, type: sequelize.QueryTypes.SELECT }
-    );
-
-    if (!currentAlert) {
-      return res.status(404).json({ message: 'Alerta no encontrada.' });
-    }
-
     // Update state using Raw SQL
     const [result] = await sequelize.query(
       `UPDATE alertas 
        SET estado = :estado, updated_at = CURRENT_TIMESTAMP 
        WHERE id = :id 
-       RETURNING id, user_id, estado, tipo_incidencia, descripcion, latitud, longitud, 
-                 fecha_ingreso, fecha_suceso, evidencia_url, acta_intervencion, 
-                 responsable_acta, fecha_acta, unidad_intervencion`,
+       RETURNING id, user_id, estado`,
       {
         replacements: { id: alertId, estado },
         type: sequelize.QueryTypes.UPDATE
       }
     );
 
-    const updatedAlert = result[0];
-    const responsableName = req.user.seudonimo || req.user.nombre || 'Operador';
+    if (!result || result.length === 0) {
+      return res.status(404).json({ message: 'Alerta no encontrada.' });
+    }
 
-    // Audit logging
-    await logAuditEvent({
-      responsable: responsableName,
-      rol: req.user.rol,
-      accion: 'ACTUALIZAR_ESTADO_ALERTA',
-      modulo: 'ALERTAS',
-      detalles: {
-        alerta_id: alertId,
-        estado_anterior: currentAlert.estado,
-        nuevo_estado: estado
-      },
-      req
-    });
+    const updatedAlert = result[0];
 
     // Emit realtime update to operators and the citizen
     if (req.io) {
-      const socketPayload = { id: updatedAlert.id, estado: updatedAlert.estado, responsable: responsableName };
+      const socketPayload = { id: updatedAlert.id, estado: updatedAlert.estado };
       req.io.to('operators').emit('alerta_estado_actualizado', socketPayload);
       req.io.to(`user_${updatedAlert.user_id}`).emit('alerta_estado_actualizado', socketPayload);
     }
@@ -279,101 +255,6 @@ router.patch('/:id/estado', authMiddleware, requireRole(['admin', 'colaborador']
   } catch (error) {
     console.error('Error updating alert status:', error);
     res.status(500).json({ message: 'Error interno del servidor al actualizar estado.' });
-  }
-});
-
-// @route   PATCH /api/alertas/:id/acta
-// @desc    Fill / update intervention act details for an alert
-// @access  Private (Admin or Colaborador)
-router.patch('/:id/acta', authMiddleware, requireRole(['admin', 'colaborador']), async (req, res) => {
-  const alertId = parseInt(req.params.id, 10);
-  let { acta_intervencion, unidad_intervencion, estado } = req.body;
-  const validEstados = ['Atendido', 'En camino', 'Falsa Alarma', 'Cancelado', 'Aun no atendido'];
-
-  if (isNaN(alertId) || alertId <= 0) {
-    return res.status(400).json({ message: 'El identificador de alerta no es válido.' });
-  }
-
-  acta_intervencion = (acta_intervencion || '').trim();
-  unidad_intervencion = (unidad_intervencion || '').trim();
-
-  if (!acta_intervencion) {
-    return res.status(400).json({ message: 'El contenido del acta de intervención es obligatorio.' });
-  }
-
-  try {
-    const [currentAlert] = await sequelize.query(
-      `SELECT a.*, u.nombre as usuario_nombre, u.dni as usuario_dni 
-       FROM alertas a 
-       LEFT JOIN usuarios u ON a.user_id = u.id 
-       WHERE a.id = :id LIMIT 1`,
-      { replacements: { id: alertId }, type: sequelize.QueryTypes.SELECT }
-    );
-
-    if (!currentAlert) {
-      return res.status(404).json({ message: 'Alerta no encontrada.' });
-    }
-
-    const nuevoEstado = estado && validEstados.includes(estado) ? estado : currentAlert.estado;
-    const responsableName = req.user.seudonimo || req.user.nombre || 'Colaborador';
-
-    const [result] = await sequelize.query(
-      `UPDATE alertas 
-       SET acta_intervencion = :acta_intervencion,
-           responsable_acta = :responsable_acta,
-           fecha_acta = CURRENT_TIMESTAMP,
-           unidad_intervencion = :unidad_intervencion,
-           estado = :estado,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = :id
-       RETURNING *`,
-      {
-        replacements: {
-          id: alertId,
-          acta_intervencion,
-          responsable_acta: responsableName,
-          unidad_intervencion: unidad_intervencion || null,
-          estado: nuevoEstado
-        },
-        type: sequelize.QueryTypes.UPDATE
-      }
-    );
-
-    const updatedAlert = {
-      ...result[0],
-      usuario_nombre: currentAlert.usuario_nombre,
-      usuario_dni: currentAlert.usuario_dni
-    };
-
-    // Audit logging
-    await logAuditEvent({
-      responsable: responsableName,
-      rol: req.user.rol,
-      accion: 'LLENAR_ACTA_INTERVENCION',
-      modulo: 'ALERTAS',
-      detalles: {
-        alerta_id: alertId,
-        estado: nuevoEstado,
-        unidad_intervencion: unidad_intervencion || 'N/A',
-        resumen_acta: acta_intervencion.substring(0, 120)
-      },
-      req
-    });
-
-    // Realtime notification
-    if (req.io) {
-      req.io.to('operators').emit('alerta_acta_actualizada', updatedAlert);
-      req.io.to('operators').emit('alerta_estado_actualizado', { id: updatedAlert.id, estado: updatedAlert.estado });
-      req.io.to(`user_${updatedAlert.user_id}`).emit('alerta_estado_actualizado', { id: updatedAlert.id, estado: updatedAlert.estado });
-    }
-
-    res.json({
-      message: 'Acta de intervención registrada exitosamente.',
-      alert: updatedAlert
-    });
-  } catch (error) {
-    console.error('Error saving alert acta:', error);
-    res.status(500).json({ message: 'Error interno del servidor al registrar acta.' });
   }
 });
 

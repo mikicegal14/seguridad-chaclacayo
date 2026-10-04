@@ -35,9 +35,5 @@ export class AlertService {
   updateEstadoAlerta(id: number, estado: string): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/${id}/estado`, { estado }).pipe(timeout(HTTP_TIMEOUT_MS));
   }
-
-  llenarActa(id: number, data: { estado?: string; acta_intervencion: string; unidad_intervencion?: string }): Observable<any> {
-    return this.http.patch<any>(`${this.apiUrl}/${id}/acta`, data).pipe(timeout(HTTP_TIMEOUT_MS));
-  }
 }
 

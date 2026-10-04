@@ -2,8 +2,7 @@ export interface User {
   id: number;
   dni: string;
   nombre: string;
-  rol: 'admin' | 'citizen' | 'colaborador';
-  seudonimo?: string;
+  rol: 'admin' | 'citizen';
   email_telefono?: string;
   created_at?: string;
   updated_at?: string;

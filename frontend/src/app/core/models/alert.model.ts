@@ -11,8 +11,4 @@ export interface Alert {
   usuario_nombre?: string;
   usuario_dni?: string;
   estado: string;
-  acta_intervencion?: string;
-  responsable_acta?: string;
-  fecha_acta?: string;
-  unidad_intervencion?: string;
 }
